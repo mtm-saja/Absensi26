@@ -43,16 +43,21 @@
   <h1>📷 Absensi Online QR</h1>
 
   <!-- ========== LOGIN ========== -->
-  <div id="loginPage" class="card">
-    <h3 style="margin-bottom:12px;">Login</h3>
-    <label>NISN Siswa / NIP Guru / ID Admin</label>
-    <input id="loginId" placeholder="NISN / NIP / ID Admin" autocomplete="off">
-    <label>PIN (Guru/Admin, 4 digit)</label>
-    <input id="loginPin" placeholder="PIN 4 digit" maxlength="4" inputmode="numeric" autocomplete="off">
-    <button onclick="doLogin()">Masuk</button>
-    <div id="loginMsg" class="msg hidden"></div>
-    <div class="info">Siswa: cukup isi NISN (PIN kosong)<br>Guru/Admin: isi ID + PIN 4 digit</div>
+<div id="loginPage" class="card">
+  <h3 style="margin-bottom:12px;">Login</h3>
+  <label>Masukkan NISN Siswa atau PIN Guru/Admin</label>
+  <input id="loginInput" 
+         placeholder="NISN (8-10 digit) / PIN (4 digit)" 
+         inputmode="numeric" 
+         autocomplete="off"
+         maxlength="18">
+  <button onclick="doLogin()">Masuk</button>
+  <div id="loginMsg" class="msg hidden"></div>
+  <div class="info">
+    🔹 Siswa: ketik <b>NISN</b> (8–10 digit)<br>
+    🔹 Guru/Admin: ketik <b>PIN</b> (4 digit)
   </div>
+</div>
 
   <!-- ========== SCAN PAGE ========== -->
   <div id="scanPage" class="hidden">
@@ -133,23 +138,40 @@ async function api(action, payload = {}) {
 /*******************************************************
  * LOGIN
  *******************************************************/
+/*******************************************************
+ * LOGIN — SATU INPUT (auto-deteksi NISN vs PIN)
+ *******************************************************/
 async function doLogin() {
-  const id = document.getElementById('loginId').value.trim();
-  const pin = document.getElementById('loginPin').value.trim();
+  const val = document.getElementById('loginInput').value.trim();
   const msg = document.getElementById('loginMsg');
   msg.classList.add('hidden');
 
-  if (!id) { showMsg('loginMsg', 'ID/NISN wajib diisi', false); return; }
-  if (id.length > 4 && !/^\d{8,10}$/.test(id)) {
-    showMsg('loginMsg', 'NISN harus 8-10 digit', false); return;
+  if (!val) {
+    showMsg('loginMsg', 'Input wajib diisi', false);
+    return;
   }
-  if (pin && !/^\d{4}$/.test(pin)) {
-    showMsg('loginMsg', 'PIN harus 4 digit', false); return;
+
+  // Deteksi otomatis berdasarkan panjang karakter
+  let mode = '';
+  if (/^\d{4}$/.test(val)) {
+    mode = 'pin';        // Guru / Admin
+  } else if (/^\d{8,10}$/.test(val)) {
+    mode = 'nisn';       // Siswa
+  } else {
+    showMsg('loginMsg',
+      'Format salah. NISN harus 8–10 digit, PIN harus 4 digit.', false);
+    return;
   }
 
   try {
-    const r = await api('login', { id, pin });
+    // Kirim: kalau NISN → isi field "id", kalau PIN → isi field "pin"
+    const payload = (mode === 'nisn')
+      ? { id: val, pin: '' }
+      : { id: '',  pin: val };
+
+    const r = await api('login', payload);
     if (!r.ok) { showMsg('loginMsg', r.msg, false); return; }
+
     currentUser = r;
     document.getElementById('userName').textContent = r.user.nama;
     document.getElementById('userRole').textContent = r.role;
@@ -167,10 +189,9 @@ function logout() {
   currentUser = null;
   document.getElementById('scanPage').classList.add('hidden');
   document.getElementById('loginPage').classList.remove('hidden');
-  document.getElementById('loginId').value = '';
-  document.getElementById('loginPin').value = '';
+  document.getElementById('loginInput').value = '';
 }
-
+ 
 /*******************************************************
  * SESI
  *******************************************************/
@@ -304,18 +325,16 @@ document.addEventListener('change', (e) => {
 });
 
 // Enter di input manual
+// Enter di input login & manual
 document.addEventListener('keypress', (e) => {
+  if (e.target.id === 'loginInput' && e.key === 'Enter') doLogin();
   if (e.target.id === 'manualBarcode' && e.key === 'Enter') submitManual();
-  if (e.target.id === 'loginPin' && e.key === 'Enter') doLogin();
 });
 
-// Auto login siswa (NISN 8-10 digit) tanpa PIN
+// Filter: hanya boleh angka
 document.addEventListener('input', (e) => {
-  if (e.target.id === 'loginId') {
-    const v = e.target.value.trim();
-    if (/^\d{8,10}$/.test(v)) {
-      // auto isi PIN kosong, user bisa langsung enter
-    }
+  if (e.target.id === 'loginInput' || e.target.id === 'manualBarcode') {
+    e.target.value = e.target.value.replace(/\D/g, '');
   }
 });
 </script>
