@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absensi Online QR Barcode</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 12px; }
+  .container { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; text-align: center; margin-bottom: 12px; color: #38bdf8; }
+  .card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+  label { display: block; font-size: .85rem; margin-bottom: 4px; color: #94a3b8; }
+  input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; font-size: 1rem; margin-bottom: 10px; }
+  button { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #0ea5e9; color: #fff; font-weight: 600; font-size: 1rem; cursor: pointer; transition: .2s; }
+  button:hover { background: #0284c7; }
+  button.danger { background: #ef4444; }
+  button.danger:hover { background: #dc2626; }
+  button.success { background: #22c55e; }
+  button.success:hover { background: #16a34a; }
+  button.secondary { background: #475569; }
+  .hidden { display: none !important; }
+  #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+  .msg { padding: 12px; border-radius: 8px; margin-top: 10px; font-size: .9rem; text-align: center; }
+  .msg.ok { background: #064e3b; color: #6ee7b7; }
+  .msg.err { background: #7f1d1d; color: #fca5a5; }
+  .info { font-size: .85rem; color: #94a3b8; text-align: center; margin-top: 8px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .badge { display:inline-block; padding:2px 8px; border-radius: 999px; font-size:.75rem; background:#334155; }
+  .badge.TW { background:#065f46; color:#6ee7b7; }
+  .badge.TL { background:#78350f; color:#fcd34d; }
+  .badge.ALPA { background:#7f1d1d; color:#fca5a5; }
+  .badge.BOLOS { background:#581c87; color:#d8b4fe; }
+  table { width:100%; border-collapse: collapse; font-size:.8rem; }
+  th, td { padding:6px; border-bottom:1px solid #334155; text-align:left; }
+  th { color:#94a3b8; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📷 Absensi Online QR</h1>
+
+  <!-- ========== LOGIN ========== -->
+  <div id="loginPage" class="card">
+    <h3 style="margin-bottom:12px;">Login</h3>
+    <label>NISN Siswa / NIP Guru / ID Admin</label>
+    <input id="loginId" placeholder="NISN / NIP / ID Admin" autocomplete="off">
+    <label>PIN (Guru/Admin, 4 digit)</label>
+    <input id="loginPin" placeholder="PIN 4 digit" maxlength="4" inputmode="numeric" autocomplete="off">
+    <button onclick="doLogin()">Masuk</button>
+    <div id="loginMsg" class="msg hidden"></div>
+    <div class="info">Siswa: cukup isi NISN (PIN kosong)<br>Guru/Admin: isi ID + PIN 4 digit</div>
+  </div>
+
+  <!-- ========== SCAN PAGE ========== -->
+  <div id="scanPage" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;">Login sebagai</div>
+          <div><strong id="userName"></strong> <span class="badge" id="userRole"></span></div>
+        </div>
+        <button class="danger" style="width:auto;padding:6px 12px;font-size:.8rem;" onclick="logout()">Logout</button>
+      </div>
+
+      <label>Pilih Sesi</label>
+      <select id="sesiSelect"></select>
+
+      <label>Mode Scan</label>
+      <select id="modeScan">
+        <option value="kamera">📷 Kamera HP</option>
+        <option value="manual">⌨️ Input Manual</option>
+      </select>
+
+      <div id="manualBox" class="hidden">
+        <input id="manualBarcode" placeholder="Ketik NISN/NIP lalu Enter" inputmode="numeric">
+        <button class="success" onclick="submitManual()">Proses</button>
+      </div>
+
+      <div id="kameraBox">
+        <div id="reader"></div>
+        <div class="row">
+          <button id="btnBuka" class="success" onclick="bukaKamera()">▶️ Buka Kamera</button>
+          <button id="btnTutup" class="danger" onclick="tutupKamera()">⏹️ Tutup Kamera</button>
+        </div>
+      </div>
+
+      <div id="scanMsg" class="msg hidden"></div>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom:8px;">Riwayat Hari Ini</h4>
+      <div style="max-height:250px;overflow:auto;">
+        <table id="riwayatTable">
+          <thead><tr><th>Jam</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button class="secondary" style="margin-top:10px;" onclick="muatRiwayat()">🔄 Refresh</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*******************************************************
+ * KONFIGURASI
+ *******************************************************/
+const API_URL = 'https://script.google.com/macros/s/AKfycbyYtH4o7NtL82XFSrsCHrbFptc3PRc6gTsYG0XHU_eTdBd3DfuiZnA7fwljK2RRCdam/exec';
+
+/*******************************************************
+ * STATE
+ *******************************************************/
+let currentUser = null;
+let html5Qr = null;
+let scanning = false;
+let lastScan = { code: '', time: 0 };
+
+/*******************************************************
+ * API HELPER
+ *******************************************************/
+async function api(action, payload = {}) {
+  const body = JSON.stringify({ action, ...payload });
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: body,
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+  });
+  return res.json();
+}
+
+/*******************************************************
+ * LOGIN
+ *******************************************************/
+async function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pin = document.getElementById('loginPin').value.trim();
+  const msg = document.getElementById('loginMsg');
+  msg.classList.add('hidden');
+
+  if (!id) { showMsg('loginMsg', 'ID/NISN wajib diisi', false); return; }
+  if (id.length > 4 && !/^\d{8,10}$/.test(id)) {
+    showMsg('loginMsg', 'NISN harus 8-10 digit', false); return;
+  }
+  if (pin && !/^\d{4}$/.test(pin)) {
+    showMsg('loginMsg', 'PIN harus 4 digit', false); return;
+  }
+
+  try {
+    const r = await api('login', { id, pin });
+    if (!r.ok) { showMsg('loginMsg', r.msg, false); return; }
+    currentUser = r;
+    document.getElementById('userName').textContent = r.user.nama;
+    document.getElementById('userRole').textContent = r.role;
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('scanPage').classList.remove('hidden');
+    await muatSesi();
+    await muatRiwayat();
+  } catch (e) {
+    showMsg('loginMsg', 'Gagal koneksi: ' + e.message, false);
+  }
+}
+
+function logout() {
+  tutupKamera();
+  currentUser = null;
+  document.getElementById('scanPage').classList.add('hidden');
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPin').value = '';
+}
+
+/*******************************************************
+ * SESI
+ *******************************************************/
+async function muatSesi() {
+  const r = await api('getSesi');
+  const sel = document.getElementById('sesiSelect');
+  sel.innerHTML = '';
+  if (!r.ok || !r.sesi.length) {
+    sel.innerHTML = '<option value="">(Belum ada sesi)</option>';
+    return;
+  }
+  r.sesi.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.sesi;
+    opt.textContent = `${s.sesi} (TW ${s.mulaiTW}-${s.batasTW} | TL ${s.batasTW}-${s.batasTL})`;
+    sel.appendChild(opt);
+  });
+}
+
+/*******************************************************
+ * KAMERA
+ *******************************************************/
+async function bukaKamera() {
+  if (scanning) return;
+  try {
+    html5Qr = new Html5Qrcode("reader");
+    scanning = true;
+    await html5Qr.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      onScanSuccess,
+      () => {}
+    );
+    document.getElementById('btnBuka').disabled = true;
+  } catch (e) {
+    scanning = false;
+    showMsg('scanMsg', 'Gagal buka kamera: ' + e.message, false);
+  }
+}
+
+async function tutupKamera() {
+  if (html5Qr && scanning) {
+    try { await html5Qr.stop(); await html5Qr.clear(); } catch(e){}
+    scanning = false;
+  }
+  document.getElementById('btnBuka').disabled = false;
+}
+
+function onScanSuccess(decodedText) {
+  const now = Date.now();
+  // Anti spam: barcode sama dalam 3 detik diabaikan
+  if (decodedText === lastScan.code && (now - lastScan.time) < 3000) return;
+  lastScan = { code: decodedText, time: now };
+  prosesScan(decodedText);
+}
+
+/*******************************************************
+ * SCAN PROSES
+ *******************************************************/
+async function prosesScan(barcode) {
+  const sesi = document.getElementById('sesiSelect').value;
+  if (!sesi) { showMsg('scanMsg', 'Pilih sesi dulu', false); return; }
+
+  try {
+    const r = await api('scan', {
+      scannerRole: currentUser.role,
+      scannerId: currentUser.user.id,
+      barcode: barcode,
+      sesi: sesi
+    });
+    showMsg('scanMsg', r.msg, r.ok);
+    if (r.ok) {
+      if (navigator.vibrate) navigator.vibrate(200);
+      await muatRiwayat();
+    }
+  } catch (e) {
+    showMsg('scanMsg', 'Gagal: ' + e.message, false);
+  }
+}
+
+function submitManual() {
+  const v = document.getElementById('manualBarcode').value.trim();
+  if (!v) return;
+  prosesScan(v);
+  document.getElementById('manualBarcode').value = '';
+}
+
+/*******************************************************
+ * RIWAYAT
+ *******************************************************/
+async function muatRiwayat() {
+  const r = await api('riwayat');
+  const tbody = document.querySelector('#riwayatTable tbody');
+  tbody.innerHTML = '';
+  if (!r.ok) return;
+  r.data.slice(0, 30).forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.timestamp.split(' ')[1] || ''}</td>
+      <td>${row.nama}</td>
+      <td>${row.sesi}</td>
+      <td><span class="badge ${row.status}">${row.status}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/*******************************************************
+ * UTIL
+ *******************************************************/
+function showMsg(elId, text, ok) {
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+// Toggle mode scan
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'modeScan') {
+    if (e.target.value === 'manual') {
+      document.getElementById('manualBox').classList.remove('hidden');
+      document.getElementById('kameraBox').classList.add('hidden');
+      tutupKamera();
+    } else {
+      document.getElementById('manualBox').classList.add('hidden');
+      document.getElementById('kameraBox').classList.remove('hidden');
+    }
+  }
+});
+
+// Enter di input manual
+document.addEventListener('keypress', (e) => {
+  if (e.target.id === 'manualBarcode' && e.key === 'Enter') submitManual();
+  if (e.target.id === 'loginPin' && e.key === 'Enter') doLogin();
+});
+
+// Auto login siswa (NISN 8-10 digit) tanpa PIN
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'loginId') {
+    const v = e.target.value.trim();
+    if (/^\d{8,10}$/.test(v)) {
+      // auto isi PIN kosong, user bisa langsung enter
+    }
+  }
+});
+</script>
+</body>
+</html>
