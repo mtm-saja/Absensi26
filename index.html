@@ -75,6 +75,20 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .table-wrap{overflow:auto;max-height:420px;border-radius:8px}
   .table-wrap table{min-width:100%}
+  /* Rekap realtime */
+  .rekap-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);border-radius:10px;padding:12px;margin-bottom:12px}
+  .rekap-title{font-size:.85rem;font-weight:700;text-align:center;letter-spacing:1px;margin-bottom:10px;color:#93c5fd}
+  .rekap-sesi-title{font-size:.95rem;font-weight:700;text-align:center;background:rgba(255,255,255,.1);padding:6px;border-radius:6px;margin-bottom:8px}
+  .rekap-table{width:100%;border-collapse:collapse;font-size:.72rem;background:#fff;border-radius:6px;overflow:hidden}
+  .rekap-table th{background:#3b82f6;color:#fff;padding:6px 4px;font-size:.68rem;text-align:center}
+  .rekap-table td{padding:6px 4px;text-align:center;color:#1e293b;border-bottom:1px solid #e2e8f0}
+  .rekap-table tr:last-child td{border-bottom:none}
+  .rekap-table td:first-child{font-weight:600;text-align:left;padding-left:10px}
+  .rekap-table .persen{font-weight:700}
+  .rekap-table .ok{color:#059669}
+  .rekap-table .warn{color:#d97706}
+  .rekap-table .bad{color:#dc2626}
+  .nilai-input{width:80px;padding:6px;font-size:.85rem;text-align:center;margin:0}
 </style>
 </head>
 <body>
@@ -167,6 +181,13 @@
       </div>
     </div>
 
+    <!-- REKAP REALTIME (di atas riwayat) -->
+    <div class="card">
+      <h4>📊 Rekap Kehadiran Realtime</h4>
+      <div class="small-info">Update otomatis setiap 30 detik</div>
+      <div id="guruRekapRealtime"></div>
+    </div>
+
     <div class="card" id="guruIzinCard">
       <h4>📝 Input Izin / Sakit Siswa</h4>
       <div class="small-info">Masukkan NISN siswa yang izin/sakit pada sesi yang berlangsung.</div>
@@ -178,6 +199,38 @@
         <option value="SAKIT">SAKIT</option>
       </select>
       <button class="success full" onclick="guruSimpanIzin()">💾 Simpan Izin</button>
+    </div>
+
+    <!-- INPUT NILAI -->
+    <div class="card" id="guruInputNilaiCard">
+      <h4>📝 Input Nilai</h4>
+      <div class="small-info">Hanya mapel & kelas yang Anda ampu.</div>
+
+      <label>Jenis Nilai</label>
+      <input id="inputJenisNilai" placeholder="Contoh: NH1, NH2, UTS, UAS">
+
+      <label>Pilih Mapel</label>
+      <select id="inputMapel" onchange="loadSiswaUntukInput()"></select>
+
+      <label>Pilih Kelas</label>
+      <select id="inputKelas" onchange="loadSiswaUntukInput()"></select>
+
+      <div id="inputNilaiBody" style="margin-top:10px;"></div>
+      <button class="success full" style="margin-top:10px;" onclick="simpanNilaiMassal()" id="btnSimpanNilai">💾 Simpan Semua Nilai</button>
+    </div>
+
+    <!-- DAFTAR NILAI -->
+    <div class="card" id="guruDaftarNilaiCard">
+      <h4>📋 Daftar Nilai</h4>
+      <div class="small-info">Kolom menyesuaikan jenis nilai yang pernah diinput.</div>
+
+      <label>Pilih Mapel</label>
+      <select id="daftarMapel" onchange="loadDaftarNilai()"></select>
+
+      <label>Pilih Kelas</label>
+      <select id="daftarKelas" onchange="loadDaftarNilai()"></select>
+
+      <div id="daftarNilaiHasil" style="margin-top:10px;overflow:auto;"></div>
     </div>
 
     <div class="card">
@@ -339,7 +392,11 @@
         <strong>A</strong> = Alpa • <strong>B</strong> = Bolos •
         <strong>IZIN/SAKIT</strong> = Izin • <strong>—</strong> = Belum Scan
       </div>
-      <div class="row" style="margin-bottom:8px;">
+
+      <h4 style="margin-top:12px;">📈 Rekap Realtime</h4>
+      <div id="adminRekapRealtime"></div>
+
+      <div class="row" style="margin-bottom:8px;margin-top:12px;">
         <button class="secondary sm" style="flex:1" onclick="muatRiwayat()">🔄 Refresh</button>
         <button class="success sm" style="flex:1" onclick="adminGenerateStatus()">⚡ Generate Status</button>
       </div>
@@ -388,10 +445,10 @@
 
 <script>
 /*******************************************************
- * KONFIG — GANTI DENGAN URL DEPLOYMENT ANDA
+ * KONFIG
  *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbws5G2nY_3ai4tAUZ19Oxsx_eZjs36m9n_UvYFar1XCzOUw4ll187agthJNo7G-NDUY/exec';
-const LS_KEY = 'absensi_session_v6';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxtKejewWt1veM_Uu3llMA-P9XhKZST3SHYUj1kFUuuC8CoVl6lfY418kygy2I66aEn/exec';
+const LS_KEY = 'absensi_session_v7';
 
 /*******************************************************
  * STATE
@@ -404,10 +461,14 @@ let cameras = { guru:null, admin:null };
 let scanning = { guru:false, admin:false };
 let lastScan = { guru:{code:'',time:0}, admin:{code:'',time:0} };
 let sesiTimer = null;
+let rekapTimer = null;
 let izinFpData = [];
+let guruMapelList = [];
+let guruKelasList = [];
+let currentSiswaInput = [];
 
 /*******************************************************
- * POPUP (RESPONSIF)
+ * POPUP
  *******************************************************/
 function showLoading(text='Memproses...') {
   const ov = document.getElementById('popupOverlay');
@@ -518,6 +579,7 @@ async function doLogin() {
 function logout() {
   guruTutupKamera(); adminTutupKamera();
   if (sesiTimer) clearInterval(sesiTimer);
+  if (rekapTimer) clearInterval(rekapTimer);
   currentUser = null;
   localStorage.removeItem(LS_KEY);
   ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
@@ -539,7 +601,7 @@ async function muatFitur() {
 /*******************************************************
  * ROUTING
  *******************************************************/
-function routeToPage() {
+async function routeToPage() {
   ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
     document.getElementById(id).classList.add('hidden'));
   const role = currentUser.role;
@@ -557,12 +619,15 @@ function routeToPage() {
     updateFingerprintButton('guru');
     muatRiwayat();
     startSesiWatcher();
+    startRekapWatcher();
+    await initGuruNilai();
   } else if (role === 'admin') {
     document.getElementById('adminNama').textContent = currentUser.user.nama;
     document.getElementById('adminPage').classList.remove('hidden');
     adminLoadLibur(); adminLoadUsers(); adminLoadFp(); adminLoadFitur();
     adminLoadIzinFp(); renderSesiList();
     startSesiWatcher();
+    startRekapWatcher();
   }
 }
 
@@ -623,6 +688,56 @@ function startSesiWatcher() {
   refreshSesiAktif();
   sesiTimer = setInterval(refreshSesiAktif, 30000);
 }
+function startRekapWatcher() {
+  if (rekapTimer) clearInterval(rekapTimer);
+  muatRekapRealtime();
+  rekapTimer = setInterval(muatRekapRealtime, 30000);
+}
+
+/*******************************************************
+ * REKAP REALTIME
+ *******************************************************/
+async function muatRekapRealtime() {
+  try {
+    const r = await api('rekapRealtime');
+    if (!r.ok) return;
+    const html = renderRekapHTML(r.sesi);
+    ['guruRekapRealtime','adminRekapRealtime'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    });
+  } catch(e) { console.error(e); }
+}
+function renderRekapHTML(sesiData) {
+  if (!sesiData || !sesiData.length) return '<div class="small-info">Belum ada sesi.</div>';
+  let html = '<div class="rekap-card"><div class="rekap-title">📊 REKAP KEHADIRAN HARI INI</div>';
+  sesiData.forEach(s => {
+    html += `<div style="margin-bottom:14px;">`;
+    html += `<div class="rekap-sesi-title">${s.sesi}</div>`;
+    html += `<table class="rekap-table"><thead><tr>
+      <th>Peran</th><th>TW</th><th>TL</th><th>S</th><th>I</th><th>A</th><th>B</th><th>%</th>
+    </tr></thead><tbody>`;
+    const renderRow = (label, stat) => {
+      const p = stat.persen;
+      const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
+      return `<tr>
+        <td>${label}</td>
+        <td>${stat.TW || '-'}</td>
+        <td>${stat.TL || '-'}</td>
+        <td>${stat.S || '-'}</td>
+        <td>${stat.I || '-'}</td>
+        <td>${stat.A || '-'}</td>
+        <td>${stat.B || '-'}</td>
+        <td class="persen ${cls}">${p}%</td>
+      </tr>`;
+    };
+    html += renderRow('Guru', s.guru);
+    html += renderRow('Siswa', s.siswa);
+    html += `</tbody></table></div>`;
+  });
+  html += '</div>';
+  return html;
+}
 
 /*******************************************************
  * FINGERPRINT
@@ -674,6 +789,7 @@ async function handleFingerprint() {
       if (r.ok) {
         if (navigator.vibrate) navigator.vibrate(200);
         muatRiwayat();
+        muatRekapRealtime();
       }
     }
   } catch(e) {
@@ -728,6 +844,7 @@ async function handleGuruFingerprint() {
       if (r.ok) {
         if (navigator.vibrate) navigator.vibrate(200);
         muatRiwayat();
+        muatRekapRealtime();
       }
     }
   } catch(e) {
@@ -791,11 +908,11 @@ async function guruProsesScan(barcode) {
       scannerRole: 'guru', scannerId: currentUser.user.id,
       barcode: String(barcode), sesi: currentSesiAktif.sesi
     });
-    // Notif langsung muncul, tidak menunggu refresh riwayat
     showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
     if (r.ok) {
       if (navigator.vibrate) navigator.vibrate(200);
-      muatRiwayat(); // background, tidak blocking
+      muatRiwayat();
+      muatRekapRealtime();
     }
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
@@ -853,6 +970,7 @@ async function adminProsesScan(barcode) {
     if (r.ok) {
       if (navigator.vibrate) navigator.vibrate(200);
       muatRiwayat();
+      muatRekapRealtime();
     }
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
@@ -962,6 +1080,136 @@ async function cekSyaratSaya() {
 }
 
 /*******************************************************
+ * GURU - INPUT NILAI & DAFTAR NILAI
+ *******************************************************/
+async function initGuruNilai() {
+  // Load mapel & kelas guru
+  try {
+    const [rMapel, rKelas] = await Promise.all([
+      api('getMapelGuru', { nip: currentUser.user.id }),
+      api('getKelasGuru', { nip: currentUser.user.id })
+    ]);
+    guruMapelList = rMapel.ok ? rMapel.mapel : [];
+    guruKelasList = rKelas.ok ? rKelas.kelas : [];
+
+    // Populate dropdown input & daftar
+    ['inputMapel','daftarMapel'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = guruMapelList.length
+        ? guruMapelList.map(m => `<option value="${m}">${m}</option>`).join('')
+        : '<option value="">(Belum ada mapel)</option>';
+    });
+    ['inputKelas','daftarKelas'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = guruKelasList.length
+        ? guruKelasList.map(k => `<option value="${k}">${k}</option>`).join('')
+        : '<option value="">(Belum ada kelas)</option>';
+    });
+
+    loadSiswaUntukInput();
+    loadDaftarNilai();
+  } catch(e) { console.error(e); }
+}
+
+async function loadSiswaUntukInput() {
+  const mapel = document.getElementById('inputMapel').value;
+  const kelas = document.getElementById('inputKelas').value;
+  const body = document.getElementById('inputNilaiBody');
+  if (!kelas) { body.innerHTML = '<div class="small-info">Pilih kelas dulu.</div>'; return; }
+
+  const r = await api('getSiswaByKelas', { kelas });
+  if (!r.ok || !r.data.length) {
+    body.innerHTML = '<div class="small-info">Tidak ada siswa di kelas ini.</div>';
+    return;
+  }
+  currentSiswaInput = r.data;
+
+  let html = '<div style="overflow:auto;max-height:400px;"><table style="min-width:100%;">';
+  html += '<thead><tr><th style="width:40px">No</th><th>Nama Siswa</th><th style="width:100px">Nilai</th></tr></thead><tbody>';
+  r.data.forEach((s, i) => {
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${s.nama}<br><span class="small-info">${s.nisn}</span></td>
+      <td><input type="number" class="nilai-input" data-nisn="${s.nisn}" placeholder="0" min="0" max="100"></td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  body.innerHTML = html;
+}
+
+async function simpanNilaiMassal() {
+  const jenis = document.getElementById('inputJenisNilai').value.trim();
+  const mapel = document.getElementById('inputMapel').value;
+  const kelas = document.getElementById('inputKelas').value;
+  if (!jenis) { showPopup('Isi jenis nilai dulu', false); return; }
+  if (!mapel || !kelas) { showPopup('Pilih mapel & kelas', false); return; }
+
+  const inputs = document.querySelectorAll('#inputNilaiBody .nilai-input');
+  const data = [];
+  inputs.forEach(inp => {
+    const nisn = inp.dataset.nisn;
+    const nilai = inp.value.trim();
+    if (nilai !== '') {
+      const s = currentSiswaInput.find(x => x.nisn === nisn);
+      data.push({ nisn, nama: s ? s.nama : '', nilai });
+    }
+  });
+
+  if (!data.length) { showPopup('Belum ada nilai yang diisi', false); return; }
+
+  showLoading(`Menyimpan ${data.length} nilai...`);
+  try {
+    const r = await api('simpanNilai', {
+      nip: currentUser.user.id, namaGuru: currentUser.user.nama,
+      mapel, kelas, jenisNilai: jenis, data
+    });
+    showPopup(r.msg, r.ok, r.ok ? 1800 : 2500);
+    if (r.ok) {
+      document.getElementById('inputJenisNilai').value = '';
+      loadSiswaUntukInput();
+      loadDaftarNilai();
+    }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
+}
+
+async function loadDaftarNilai() {
+  const mapel = document.getElementById('daftarMapel').value;
+  const kelas = document.getElementById('daftarKelas').value;
+  const el = document.getElementById('daftarNilaiHasil');
+  if (!mapel || !kelas) { el.innerHTML = '<div class="small-info">Pilih mapel & kelas.</div>'; return; }
+
+  showLoading('Memuat daftar nilai...');
+  try {
+    const r = await api('getDaftarNilai', { mapel, kelas });
+    closePopup();
+    if (!r.ok) { showPopup(r.msg, false); return; }
+    if (!r.data.length) { el.innerHTML = '<div class="small-info">Belum ada siswa.</div>'; return; }
+    if (!r.jenis.length) {
+      el.innerHTML = '<div class="small-info">Belum ada nilai untuk mapel & kelas ini.</div>';
+      return;
+    }
+
+    let html = '<div style="overflow:auto;"><table style="min-width:100%;">';
+    html += '<thead><tr><th style="width:40px">No</th><th>Nama</th>';
+    r.jenis.forEach(j => html += `<th style="text-align:center;">${j}</th>`);
+    html += '</tr></thead><tbody>';
+
+    r.data.forEach((s, i) => {
+      html += `<tr><td>${i+1}</td><td>${s.nama}<br><span class="small-info">${s.nisn}</span></td>`;
+      r.jenis.forEach(j => {
+        const v = s.nilai[j] !== undefined ? s.nilai[j] : '-';
+        html += `<td style="text-align:center;">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+  } catch(e) {
+    showPopup('Gagal: '+e.message, false, 2500);
+  }
+}
+
+/*******************************************************
  * ADMIN - TABS
  *******************************************************/
 function switchTab(tab) {
@@ -973,7 +1221,7 @@ function switchTab(tab) {
   if (tab !== 'scan') adminTutupKamera();
   if (tab === 'fitur') adminLoadFitur();
   if (tab === 'izinfp') adminLoadIzinFp();
-  if (tab === 'riwayat') muatRiwayat();
+  if (tab === 'riwayat') { muatRiwayat(); muatRekapRealtime(); }
 }
 
 /*******************************************************
@@ -1030,6 +1278,7 @@ async function adminSimpanIzin() {
     document.getElementById('izinId').value='';
     document.getElementById('izinNama').value='';
     muatRiwayat();
+    muatRekapRealtime();
   }
   showPopup(r.msg, r.ok);
 }
@@ -1051,7 +1300,11 @@ async function guruSimpanIzin() {
       role: 'siswa', id: nisn, nama: 'Siswa ' + nisn,
       sesi: currentSesiAktif.sesi, keterangan: ket
     });
-    if (r.ok) { document.getElementById('guruIzinNisn').value=''; muatRiwayat(); }
+    if (r.ok) {
+      document.getElementById('guruIzinNisn').value='';
+      muatRiwayat();
+      muatRekapRealtime();
+    }
     showPopup(r.msg, r.ok);
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
@@ -1075,7 +1328,6 @@ function renderIzinFpList() {
   const filterRole = document.getElementById('izinFpFilterRole').value;
   const filterStatus = document.getElementById('izinFpFilterStatus').value;
   const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
-
   let list = izinFpData.slice();
   if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
   if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
@@ -1085,16 +1337,13 @@ function renderIzinFpList() {
     String(u.id).toLowerCase().includes(search) ||
     String(u.extra || '').toLowerCase().includes(search)
   );
-
   const totalOn = izinFpData.filter(u => u.allowed).length;
   document.getElementById('izinFpCount').textContent = list.length;
   document.getElementById('izinFpCountOn').textContent = totalOn;
-
   if (!list.length) {
     el.innerHTML = '<div class="small-info" style="text-align:center;padding:20px;">Tidak ada user sesuai filter.</div>';
     return;
   }
-
   el.innerHTML = list.map(u => {
     const roleBadge = `<span class="badge ${u.role}">${u.role}</span>`;
     const info = u.extra ? `<span class="small-info">${u.extra}</span>` : '';
@@ -1151,7 +1400,6 @@ async function adminBulkIzinFp(allowed) {
   const filterRole = document.getElementById('izinFpFilterRole').value;
   const filterStatus = document.getElementById('izinFpFilterStatus').value;
   const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
-
   let list = izinFpData.slice();
   if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
   if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
@@ -1161,13 +1409,10 @@ async function adminBulkIzinFp(allowed) {
     String(u.id).toLowerCase().includes(search) ||
     String(u.extra || '').toLowerCase().includes(search)
   );
-
   const target = allowed ? list.filter(u => !u.allowed) : list.filter(u => u.allowed);
   if (!target.length) { showPopup('Tidak ada user yang perlu diubah', false, 1500); return; }
-
   const aksi = allowed ? 'IZINKAN' : 'TOLAK';
   if (!confirm(`${aksi} sidik jari untuk ${target.length} user?`)) return;
-
   let alasan = 'Izin massal';
   if (allowed) {
     const input = prompt('Alasan pemberian izin massal (opsional):', 'PJJ / Kegiatan khusus');
@@ -1264,7 +1509,7 @@ async function adminGenerateStatus() {
   try {
     const r = await api('generateOtomatis');
     showPopup(r.msg, r.ok, 2500);
-    if (r.ok) muatRiwayat();
+    if (r.ok) { muatRiwayat(); muatRekapRealtime(); }
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
