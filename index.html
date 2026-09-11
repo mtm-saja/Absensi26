@@ -11,6 +11,7 @@
   .container{max-width:520px;margin:0 auto}
   h1{font-size:1.3rem;text-align:center;margin-bottom:12px;color:#38bdf8}
   h3,h4{margin-bottom:8px}
+  h5{margin-bottom:6px}
   .card{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
   label{display:block;font-size:.85rem;margin-bottom:4px;color:#94a3b8}
   input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:1rem;margin-bottom:10px}
@@ -75,7 +76,6 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .table-wrap{overflow:auto;max-height:420px;border-radius:8px}
   .table-wrap table{min-width:100%}
-  /* Rekap realtime */
   .rekap-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);border-radius:10px;padding:12px;margin-bottom:12px}
   .rekap-title{font-size:.85rem;font-weight:700;text-align:center;letter-spacing:1px;margin-bottom:10px;color:#93c5fd}
   .rekap-sesi-title{font-size:.95rem;font-weight:700;text-align:center;background:rgba(255,255,255,.1);padding:6px;border-radius:6px;margin-bottom:8px}
@@ -181,7 +181,6 @@
       </div>
     </div>
 
-    <!-- REKAP REALTIME (di atas riwayat) -->
     <div class="card">
       <h4>📊 Rekap Kehadiran Realtime</h4>
       <div class="small-info">Update otomatis setiap 30 detik</div>
@@ -201,35 +200,26 @@
       <button class="success full" onclick="guruSimpanIzin()">💾 Simpan Izin</button>
     </div>
 
-    <!-- INPUT NILAI -->
     <div class="card" id="guruInputNilaiCard">
       <h4>📝 Input Nilai</h4>
       <div class="small-info">Hanya mapel & kelas yang Anda ampu.</div>
-
       <label>Jenis Nilai</label>
       <input id="inputJenisNilai" placeholder="Contoh: NH1, NH2, UTS, UAS">
-
       <label>Pilih Mapel</label>
       <select id="inputMapel" onchange="loadSiswaUntukInput()"></select>
-
       <label>Pilih Kelas</label>
       <select id="inputKelas" onchange="loadSiswaUntukInput()"></select>
-
       <div id="inputNilaiBody" style="margin-top:10px;"></div>
       <button class="success full" style="margin-top:10px;" onclick="simpanNilaiMassal()" id="btnSimpanNilai">💾 Simpan Semua Nilai</button>
     </div>
 
-    <!-- DAFTAR NILAI -->
     <div class="card" id="guruDaftarNilaiCard">
       <h4>📋 Daftar Nilai</h4>
       <div class="small-info">Kolom menyesuaikan jenis nilai yang pernah diinput.</div>
-
       <label>Pilih Mapel</label>
       <select id="daftarMapel" onchange="loadDaftarNilai()"></select>
-
       <label>Pilih Kelas</label>
       <select id="daftarKelas" onchange="loadDaftarNilai()"></select>
-
       <div id="daftarNilaiHasil" style="margin-top:10px;overflow:auto;"></div>
     </div>
 
@@ -392,10 +382,8 @@
         <strong>A</strong> = Alpa • <strong>B</strong> = Bolos •
         <strong>IZIN/SAKIT</strong> = Izin • <strong>—</strong> = Belum Scan
       </div>
-
       <h4 style="margin-top:12px;">📈 Rekap Realtime</h4>
       <div id="adminRekapRealtime"></div>
-
       <div class="row" style="margin-bottom:8px;margin-top:12px;">
         <button class="secondary sm" style="flex:1" onclick="muatRiwayat()">🔄 Refresh</button>
         <button class="success sm" style="flex:1" onclick="adminGenerateStatus()">⚡ Generate Status</button>
@@ -411,7 +399,7 @@
     <div id="tab-fitur" class="card hidden">
       <h4>⚙️ Pengaturan Fitur</h4>
       <div class="small-info">Aktifkan / nonaktifkan fitur & atur periode perhitungan syarat kelas.</div>
-    
+
       <h5 style="margin-top:12px;color:#38bdf8;">📝 Input Izin/Sakit</h5>
       <div class="switch-row">
         <div>
@@ -433,30 +421,30 @@
           <span class="slider"></span>
         </label>
       </div>
-    
+
       <h5 style="margin-top:20px;color:#38bdf8;">🎓 Periode Perhitungan Syarat Kelas</h5>
       <div class="small-info">Tentukan tanggal mulai & akhir perhitungan akumulasi kehadiran.</div>
-    
+
       <label>Tanggal Mulai Dihitung</label>
       <input type="date" id="fitTglMulai" onchange="adminSetFitur()">
       <div class="small-info" style="margin-top:-4px;margin-bottom:10px;">
         Sebelum tanggal ini, kehadiran <strong>tidak dihitung</strong> untuk syarat kelas.
-        Kosongkan untuk menghitung dari awal.
       </div>
-    
+
       <label>Tanggal Akhir Dihitung (opsional)</label>
       <input type="date" id="fitTglAkhir" onchange="adminSetFitur()">
       <div class="small-info" style="margin-top:-4px;margin-bottom:10px;">
         Setelah tanggal ini, kehadiran <strong>tidak dihitung</strong>.
-        Kosongkan untuk menghitung sampai hari ini.
       </div>
-    
+
       <div style="background:rgba(14,165,233,.1);border-left:3px solid #0ea5e9;padding:10px;border-radius:6px;margin-top:10px;font-size:.78rem;color:#94a3b8;">
         💡 <strong>Tips Uji Coba:</strong> Set tanggal mulai = tanggal resmi aplikasi digunakan.
-        Sebelum tanggal itu, semua log tetap dicatat tapi diabaikan dari perhitungan.
       </div>
     </div>
-   
+  </div>
+</div>
+
+<!-- ========== POPUP ========== -->
 <div id="popupOverlay" class="popup-overlay hidden">
   <div class="popup-box" id="popupBox">
     <div id="popupIcon" class="icon"></div>
@@ -465,12 +453,11 @@
   </div>
 </div>
 
-
 <script>
 /*******************************************************
  * KONFIG
  *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbw1OnbnsEqSbHXYmjW3VHnJ0_VHt7gZKscqBbYLxKM46hb8zrKS9WCEjdtsAjX4KI96/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzbTuszFqA-7PAKUUxAwczrXj5MRYjcOdwrqSSsxvpiM76o2kuYUqe_nXxokuDzkOmi/exec';
 const LS_KEY = 'absensi_session_v8';
 
 /*******************************************************
