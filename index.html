@@ -21,9 +21,7 @@
   button.full{width:100%}
   button.sm{padding:6px 10px;font-size:.8rem;width:auto}
   .hidden{display:none!important}
-  #reader{width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px}
-  .msg{padding:12px;border-radius:8px;margin-top:10px;font-size:.9rem;text-align:center}
-  .msg.ok{background:#064e3b;color:#6ee7b7}.msg.err{background:#7f1d1d;color:#fca5a5}
+  #reader,#guruReader,#adminReader{width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px}
   .info{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:8px}
   .row{display:flex;gap:8px}.row>*{flex:1}
   .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
@@ -42,6 +40,39 @@
   .tabs button{flex:1;min-width:80px;padding:8px 4px;font-size:.75rem;background:#334155}
   .tabs button.active{background:#0ea5e9}
   .small-info{font-size:.75rem;color:#94a3b8;margin-bottom:8px}
+
+  /* Sesi info banner */
+  .sesi-banner{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:10px;padding:12px;text-align:center;margin-bottom:12px}
+  .sesi-banner .label{font-size:.7rem;text-transform:uppercase;opacity:.8;letter-spacing:1px}
+  .sesi-banner .name{font-size:1.4rem;font-weight:700;margin:4px 0}
+  .sesi-banner .time{font-size:.8rem;opacity:.9}
+  .sesi-banner.warn{background:linear-gradient(135deg,#f59e0b,#d97706)}
+  .sesi-banner.err{background:linear-gradient(135deg,#ef4444,#dc2626)}
+  .sesi-banner .status-tag{display:inline-block;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:999px;font-size:.7rem;margin-top:6px}
+
+  /* Toggle switch */
+  .switch{position:relative;display:inline-block;width:52px;height:28px}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#475569;transition:.3s;border-radius:28px}
+  .slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
+  input:checked + .slider{background:#22c55e}
+  input:checked + .slider:before{transform:translateX(24px)}
+  .switch-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #334155}
+  .switch-row:last-child{border-bottom:none}
+  .switch-row .label{font-size:.9rem;color:#e2e8f0}
+  .switch-row .desc{font-size:.75rem;color:#94a3b8;margin-top:2px}
+
+  /* Popup loading & alert */
+  .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px)}
+  .popup-box{background:#1e293b;border-radius:16px;padding:24px 28px;text-align:center;min-width:220px;max-width:340px;box-shadow:0 20px 40px rgba(0,0,0,.5);animation:popIn .25s ease-out}
+  @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .popup-box .icon{font-size:2.5rem;margin-bottom:10px}
+  .popup-box .text{font-size:.95rem;color:#e2e8f0;line-height:1.4}
+  .popup-box.ok .icon{color:#22c55e}
+  .popup-box.err .icon{color:#ef4444}
+  .popup-box .close-btn{margin-top:14px;background:#0ea5e9;padding:8px 20px;border-radius:8px;border:none;color:#fff;font-weight:600;cursor:pointer}
+  .spinner{width:44px;height:44px;border:4px solid #334155;border-top-color:#0ea5e9;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+  @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -55,7 +86,6 @@
     <input id="loginInput" placeholder="NISN (8-10 digit) / PIN (4 digit)"
            inputmode="numeric" autocomplete="off" maxlength="18">
     <button class="full" onclick="doLogin()">Masuk</button>
-    <div id="loginMsg" class="msg hidden"></div>
     <div class="info">🔹 Siswa: NISN (8–10 digit) &nbsp;|&nbsp; 🔹 Guru/Admin: PIN (4 digit)</div>
   </div>
 
@@ -71,23 +101,23 @@
         <button class="danger sm" onclick="logout()">Logout</button>
       </div>
 
-      <label>Pilih Sesi</label>
-      <select id="siswaSesiSelect"></select>
+      <div id="siswaSesiBanner"></div>
 
       <div id="fingerprintArea">
         <button id="btnFingerprint" class="success full" onclick="handleFingerprint()">
           🖐️ Daftarkan Sidik Jari
         </button>
-        <div class="info">Gunakan sensor sidik jari HP (WebAuthn) untuk absen.</div>
+        <div class="info" id="siswaFpInfo">Gunakan sensor sidik jari HP (WebAuthn) untuk absen.</div>
       </div>
-
-      <div id="siswaMsg" class="msg hidden"></div>
     </div>
 
     <div class="card">
-      <h4 style="margin-bottom:8px;">Riwayat Hari Ini</h4>
+      <h4 style="margin-bottom:8px;">Riwayat Saya Hari Ini</h4>
       <div style="max-height:250px;overflow:auto;">
-        <table id="siswaRiwayat"><thead><tr><th>Jam</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead><tbody></tbody></table>
+        <table id="siswaRiwayat">
+          <thead><tr><th>No</th><th>Nama</th><th>Jam Scan</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
       <button class="secondary full" style="margin-top:10px;" onclick="muatRiwayat()">🔄 Refresh</button>
     </div>
@@ -104,8 +134,7 @@
         <button class="danger sm" onclick="logout()">Logout</button>
       </div>
 
-      <label>Pilih Sesi</label>
-      <select id="guruSesiSelect"></select>
+      <div id="guruSesiBanner"></div>
 
       <label>Mode Scan</label>
       <select id="guruModeScan">
@@ -126,24 +155,48 @@
         </div>
       </div>
 
-      <div id="guruScanMsg" class="msg hidden"></div>
-
       <hr style="margin:14px 0;border-color:#334155">
       <div id="guruFingerprintArea">
         <button id="guruBtnFingerprint" class="success full" onclick="handleGuruFingerprint()">
           🖐️ Daftarkan Sidik Jari
         </button>
         <div class="info">Untuk absen guru (via sidik jari HP).</div>
-        <div id="guruFpMsg" class="msg hidden"></div>
       </div>
     </div>
 
+    <!-- Input Izin/Sakit Siswa oleh Guru -->
+    <div class="card" id="guruIzinCard">
+      <h4 style="margin-bottom:8px;">📝 Input Izin / Sakit Siswa</h4>
+      <div class="small-info">Masukkan NISN siswa yang izin/sakit pada sesi ini.</div>
+      <label>NISN Siswa</label>
+      <input id="guruIzinNisn" placeholder="NISN 8-10 digit" inputmode="numeric" maxlength="10">
+      <label>Keterangan</label>
+      <select id="guruIzinKet">
+        <option value="IZIN">IZIN</option>
+        <option value="SAKIT">SAKIT</option>
+      </select>
+      <button class="success full" onclick="guruSimpanIzin()">💾 Simpan Izin</button>
+    </div>
+
     <div class="card">
-      <h4 style="margin-bottom:8px;">Riwayat Hari Ini</h4>
+      <h4 style="margin-bottom:8px;">Riwayat Siswa Hari Ini</h4>
       <div style="max-height:250px;overflow:auto;">
-        <table id="guruRiwayat"><thead><tr><th>Jam</th><th>Nama</th><th>Sesi</th><th>Status</th></tr></thead><tbody></tbody></table>
+        <table id="guruRiwayatSiswa">
+          <thead><tr><th>No</th><th>Nama</th><th>Jam Scan</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
       <button class="secondary full" style="margin-top:10px;" onclick="muatRiwayat()">🔄 Refresh</button>
+    </div>
+
+    <div class="card">
+      <h4 style="margin-bottom:8px;">Riwayat Guru Hari Ini</h4>
+      <div style="max-height:200px;overflow:auto;">
+        <table id="guruRiwayatGuru">
+          <thead><tr><th>No</th><th>Nama</th><th>Jam Scan</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -165,6 +218,7 @@
       <button data-tab="izin" onclick="switchTab('izin')">📝 Izin</button>
       <button data-tab="libur" onclick="switchTab('libur')">🏖️ Libur</button>
       <button data-tab="user" onclick="switchTab('user')">👤 User</button>
+      <button data-tab="fitur" onclick="switchTab('fitur')">⚙️ Fitur</button>
     </div>
 
     <!-- Tab Scan -->
@@ -197,28 +251,23 @@
           <button class="danger" onclick="adminTutupKamera()">⏹️ Tutup</button>
         </div>
       </div>
-
-      <div id="adminScanMsg" class="msg hidden"></div>
     </div>
 
     <!-- Tab Sesi -->
     <div id="tab-sesi" class="card hidden">
       <h4 style="margin-bottom:8px;">Pengaturan Sesi</h4>
-      <div class="small-info">Tambahkan / hapus sesi dinamis.</div>
       <div id="sesiList"></div>
-
       <hr style="margin:12px 0;border-color:#334155">
       <h4 style="margin-bottom:8px;">Tambah Sesi Baru</h4>
       <label>Nama Sesi</label>
       <input id="newSesiNama" placeholder="Sesi 4">
-      <label>Mulai TW (Tepat Waktu)</label>
+      <label>Mulai TW</label>
       <input id="newSesiMulaiTW" type="time" value="16:00">
       <label>Batas TW / Mulai TL</label>
       <input id="newSesiBatasTW" type="time" value="16:30">
       <label>Batas TL / Tutup</label>
       <input id="newSesiBatasTL" type="time" value="17:00">
       <button class="success full" onclick="adminTambahSesi()">➕ Tambah Sesi</button>
-      <div id="sesiMsg" class="msg hidden"></div>
     </div>
 
     <!-- Tab Izin -->
@@ -232,7 +281,7 @@
       <label>ID (NISN / NIP)</label>
       <input id="izinId" placeholder="NISN atau NIP" inputmode="numeric">
       <label>Nama</label>
-      <input id="izinNama" placeholder="Nama (otomatis terisi jika ID valid)">
+      <input id="izinNama" placeholder="Nama">
       <label>Pilih Sesi</label>
       <select id="izinSesiSelect"></select>
       <label>Keterangan</label>
@@ -241,7 +290,6 @@
         <option value="SAKIT">SAKIT</option>
       </select>
       <button class="success full" onclick="adminSimpanIzin()">💾 Simpan</button>
-      <div id="izinMsg" class="msg hidden"></div>
     </div>
 
     <!-- Tab Libur -->
@@ -252,8 +300,6 @@
       <label>Keterangan</label>
       <input id="liburKet" placeholder="Contoh: Libur Nasional">
       <button class="success full" onclick="adminSimpanLibur()">➕ Simpan Libur</button>
-      <div id="liburMsg" class="msg hidden"></div>
-
       <hr style="margin:12px 0;border-color:#334155">
       <h4 style="margin-bottom:8px;">Daftar Hari Libur</h4>
       <div id="liburList" style="max-height:200px;overflow:auto;"></div>
@@ -263,12 +309,70 @@
     <div id="tab-user" class="card hidden">
       <h4 style="margin-bottom:8px;">Reset PIN Guru/Admin</h4>
       <div id="userList" style="max-height:250px;overflow:auto;margin-bottom:10px;"></div>
-
       <hr style="margin:12px 0;border-color:#334155">
       <h4 style="margin-bottom:8px;">Reset Sidik Jari</h4>
       <div id="fpList" style="max-height:200px;overflow:auto;"></div>
       <button class="secondary full" style="margin-top:8px;" onclick="adminLoadFp()">🔄 Refresh Daftar Sidik Jari</button>
     </div>
+
+    <!-- Tab Fitur -->
+    <div id="tab-fitur" class="card hidden">
+      <h4 style="margin-bottom:8px;">⚙️ Pengaturan Fitur</h4>
+      <div class="small-info">Aktifkan / nonaktifkan fitur absensi sidik jari dan input izin/sakit.</div>
+
+      <div class="switch-row">
+        <div>
+          <div class="label">🖐️ Sidik Jari Siswa</div>
+          <div class="desc">Izinkan siswa absen dengan sidik jari</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fitSidikSiswa" onchange="adminSetFitur()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <div class="label">🖐️ Sidik Jari Guru</div>
+          <div class="desc">Izinkan guru absen dengan sidik jari</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fitSidikGuru" onchange="adminSetFitur()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <div class="label">📝 Input Izin/Sakit Siswa</div>
+          <div class="desc">Izinkan input izin/sakit untuk siswa</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fitIzinSiswa" onchange="adminSetFitur()">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <div class="label">📝 Input Izin/Sakit Guru</div>
+          <div class="desc">Izinkan input izin/sakit untuk guru</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="fitIzinGuru" onchange="adminSetFitur()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== POPUP LOADING & ALERT ========== -->
+<div id="popupOverlay" class="popup-overlay hidden">
+  <div class="popup-box" id="popupBox">
+    <div id="popupIcon" class="icon"></div>
+    <div id="popupContent"></div>
+    <button id="popupClose" class="close-btn hidden" onclick="closePopup()">OK</button>
   </div>
 </div>
 
@@ -276,17 +380,64 @@
 /*******************************************************
  * KONFIG
  *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbx5Yid26X7psfETgjh2LXm4-n2MlmWKCPE8y0QCEtnQQ7S5i5OhGRSkJWrGE7A5POSy/exec';
-const LS_KEY = 'absensi_session_v2';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwasRRchQfrx2krGJsliuXWxgPdEfsc1UN0zsPRjaKAObJnhqO59qPqwZG_eXrkamBb/exec';
+const LS_KEY = 'absensi_session_v3';
 
 /*******************************************************
  * STATE
  *******************************************************/
-let currentUser = null;    // { role, user, hasFingerprint }
+let currentUser = null;
 let currentSesiList = [];
-let cameras = { guru: null, admin: null };
-let scanning = { guru: false, admin: false };
-let lastScan = { guru: {code:'',time:0}, admin: {code:'',time:0} };
+let currentSesiAktif = null;
+let fiturGlobal = { izinSidikJariSiswa:'YA', izinSidikJariGuru:'YA', izinIzinSakitGuru:'YA', izinIzinSakitSiswa:'YA' };
+let cameras = { guru:null, admin:null };
+let scanning = { guru:false, admin:false };
+let lastScan = { guru:{code:'',time:0}, admin:{code:'',time:0} };
+let sesiTimer = null;
+
+/*******************************************************
+ * POPUP SYSTEM
+ *******************************************************/
+function showLoading(text='Memproses...') {
+  const ov = document.getElementById('popupOverlay');
+  const box = document.getElementById('popupBox');
+  const icon = document.getElementById('popupIcon');
+  const content = document.getElementById('popupContent');
+  const btn = document.getElementById('popupClose');
+
+  box.className = 'popup-box';
+  icon.innerHTML = '<div class="spinner"></div>';
+  content.innerHTML = `<div class="text">${text}</div>`;
+  btn.classList.add('hidden');
+  ov.classList.remove('hidden');
+}
+
+function showPopup(text, ok = true, autoCloseMs = 2000) {
+  const ov = document.getElementById('popupOverlay');
+  const box = document.getElementById('popupBox');
+  const icon = document.getElementById('popupIcon');
+  const content = document.getElementById('popupContent');
+  const btn = document.getElementById('popupClose');
+
+  box.className = 'popup-box ' + (ok ? 'ok' : 'err');
+  icon.textContent = ok ? '✅' : '❌';
+  content.innerHTML = `<div class="text">${text}</div>`;
+  btn.classList.remove('hidden');
+  ov.classList.remove('hidden');
+
+  if (autoCloseMs > 0) {
+    clearTimeout(window._popupTimer);
+    window._popupTimer = setTimeout(closePopup, autoCloseMs);
+  }
+}
+
+function closePopup() {
+  document.getElementById('popupOverlay').classList.add('hidden');
+  clearTimeout(window._popupTimer);
+}
+
+// Backward compat: showMsg sekarang pakai popup
+function showMsg(elId, text, ok) { showPopup(text, ok); }
 
 /*******************************************************
  * API
@@ -301,7 +452,7 @@ async function api(action, payload = {}) {
 }
 
 /*******************************************************
- * SESSION PERSISTENCE
+ * SESSION
  *******************************************************/
 function saveSession() {
   if (!currentUser) return localStorage.removeItem(LS_KEY);
@@ -309,6 +460,8 @@ function saveSession() {
     role: currentUser.role,
     user: currentUser.user,
     hasFingerprint: currentUser.hasFingerprint,
+    allowFingerprint: currentUser.allowFingerprint,
+    allowIzinSakit: currentUser.allowIzinSakit,
     ts: Date.now()
   }));
 }
@@ -317,10 +470,7 @@ function loadSession() {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    // Expired 12 jam
-    if (Date.now() - s.ts > 12 * 60 * 60 * 1000) {
-      localStorage.removeItem(LS_KEY); return null;
-    }
+    if (Date.now() - s.ts > 12*60*60*1000) { localStorage.removeItem(LS_KEY); return null; }
     return s;
   } catch(e) { return null; }
 }
@@ -332,6 +482,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   const s = loadSession();
   if (s) {
     currentUser = s;
+    await muatFitur();
     await muatSesi();
     routeToPage();
   }
@@ -342,48 +493,59 @@ window.addEventListener('DOMContentLoaded', async () => {
  *******************************************************/
 async function doLogin() {
   const val = document.getElementById('loginInput').value.trim();
-  const msg = document.getElementById('loginMsg');
-  msg.classList.add('hidden');
-
-  if (!val) { showMsg('loginMsg','Input wajib diisi',false); return; }
+  if (!val) { showPopup('Input wajib diisi', false); return; }
   if (!/^\d{4}$/.test(val) && !/^\d{8,10}$/.test(val)) {
-    showMsg('loginMsg','Format salah. NISN 8–10 digit / PIN 4 digit.',false); return;
+    showPopup('Format salah. NISN 8–10 digit / PIN 4 digit.', false); return;
   }
 
+  showLoading('Memverifikasi login...');
   try {
-    const payload = /^\d{4}$/.test(val)
-      ? { id: '', pin: val }
-      : { id: val, pin: '' };
+    const payload = /^\d{4}$/.test(val) ? { id:'', pin:val } : { id:val, pin:'' };
     const r = await api('login', payload);
-    if (!r.ok) { showMsg('loginMsg', r.msg, false); return; }
+    if (!r.ok) { showPopup(r.msg, false, 2500); return; }
 
     currentUser = r;
     saveSession();
     document.getElementById('loginInput').value = '';
+    await muatFitur();
     await muatSesi();
-    routeToPage();
+    showPopup('Login Berhasil! Selamat datang, ' + r.user.nama, true, 1800);
+    setTimeout(() => {
+      closePopup();
+      routeToPage();
+    }, 1600);
   } catch(e) {
-    showMsg('loginMsg','Gagal koneksi: '+e.message, false);
+    showPopup('Gagal koneksi: '+e.message, false, 3000);
   }
 }
 
 function logout() {
   guruTutupKamera(); adminTutupKamera();
+  if (sesiTimer) clearInterval(sesiTimer);
   currentUser = null;
   localStorage.removeItem(LS_KEY);
-  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
-  });
+  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
+    document.getElementById(id).classList.add('hidden'));
   document.getElementById('loginPage').classList.remove('hidden');
+  showPopup('Logout berhasil', true, 1500);
+}
+
+/*******************************************************
+ * FITUR
+ *******************************************************/
+async function muatFitur() {
+  try {
+    const r = await api('getFitur');
+    if (r.ok) fiturGlobal = r.fitur;
+  } catch(e) {}
 }
 
 /*******************************************************
  * ROUTING
  *******************************************************/
 function routeToPage() {
-  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id => {
-    document.getElementById(id).classList.add('hidden');
-  });
+  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
+    document.getElementById(id).classList.add('hidden'));
   const role = currentUser.role;
   if (role === 'siswa') {
     document.getElementById('siswaNama').textContent = currentUser.user.nama;
@@ -391,23 +553,23 @@ function routeToPage() {
     document.getElementById('siswaPage').classList.remove('hidden');
     updateFingerprintButton('siswa');
     muatRiwayat();
+    startSesiWatcher();
   } else if (role === 'guru') {
     document.getElementById('guruNama').textContent = currentUser.user.nama;
     document.getElementById('guruPage').classList.remove('hidden');
     updateFingerprintButton('guru');
     muatRiwayat();
+    startSesiWatcher();
   } else if (role === 'admin') {
     document.getElementById('adminNama').textContent = currentUser.user.nama;
     document.getElementById('adminPage').classList.remove('hidden');
-    adminLoadLibur();
-    adminLoadUsers();
-    adminLoadFp();
-    renderSesiList();
+    adminLoadLibur(); adminLoadUsers(); adminLoadFp(); adminLoadFitur(); renderSesiList();
+    startSesiWatcher();
   }
 }
 
 /*******************************************************
- * SESI
+ * SESI (auto refresh untuk guru & siswa)
  *******************************************************/
 async function muatSesi() {
   const r = await api('getSesi');
@@ -416,163 +578,184 @@ async function muatSesi() {
   const opts = r.sesi.map(s =>
     `<option value="${s.sesi}">${s.sesi} (TW ${s.mulaiTW}-${s.batasTW} | TL ${s.batasTW}-${s.batasTL})</option>`
   ).join('');
-  ['siswaSesiSelect','guruSesiSelect','adminSesiSelect','izinSesiSelect'].forEach(id => {
+  ['adminSesiSelect','izinSesiSelect'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts || '<option value="">(Belum ada sesi)</option>';
   });
 }
 
-/*******************************************************
- * FINGERPRINT (WebAuthn)
- *******************************************************/
-async function handleFingerprint() {
-  const btn = document.getElementById('btnFingerprint');
-  const isRegistered = currentUser.hasFingerprint;
-  const sesi = document.getElementById('siswaSesiSelect').value;
-  if (!sesi) { showMsg('siswaMsg','Pilih sesi dulu', false); return; }
-
-  if (!window.PublicKeyCredential) {
-    showMsg('siswaMsg','HP/browser tidak mendukung sidik jari', false); return;
-  }
-
+async function refreshSesiAktif() {
   try {
-    if (!isRegistered) {
-      // ==== Registrasi ====
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const userId = new TextEncoder().encode(currentUser.user.id);
-      const cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: challenge,
-          rp: { name: 'Absensi Online' },
-          user: { id: userId, name: currentUser.user.id, displayName: currentUser.user.nama },
-          pubKeyCredParams: [
-            { alg: -7, type: 'public-key' },   // ES256
-            { alg: -257, type: 'public-key' }  // RS256
-          ],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required'
-          },
-          timeout: 60000,
-          attestation: 'none'
-        }
-      });
-      if (!cred) throw new Error('Registrasi dibatalkan');
-
-      // Simpan ke backend
-      const credId = b64(cred.rawId);
-      const reg = await api('registerFingerprint', {
-        id: currentUser.user.id,
-        nama: currentUser.user.nama,
-        role: 'siswa',
-        credentialId: credId,
-        publicKey: ''
-      });
-      if (!reg.ok) { showMsg('siswaMsg', reg.msg, false); return; }
-
-      currentUser.hasFingerprint = true;
-      saveSession();
-      updateFingerprintButton('siswa');
-      showMsg('siswaMsg','✅ Sidik jari terdaftar. Silakan tekan tombol lagi untuk absen.', true);
-    } else {
-      // ==== Absen via sidik jari ====
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({
-        publicKey: {
-          challenge: challenge,
-          timeout: 60000,
-          userVerification: 'required'
-        }
-      });
-      const r = await api('absenFingerprint', {
-        id: currentUser.user.id,
-        nama: currentUser.user.nama,
-        role: 'siswa',
-        sesi: sesi
-      });
-      showMsg('siswaMsg', r.msg, r.ok);
-      if (r.ok) {
-        if (navigator.vibrate) navigator.vibrate(200);
-        muatRiwayat();
-      }
-    }
-  } catch(e) {
-    if (e.name === 'NotAllowedError') showMsg('siswaMsg','Dibatalkan / tidak ada sidik jari', false);
-    else showMsg('siswaMsg','Error: '+e.message, false);
-  }
+    const r = await api('getSesiAktif');
+    currentSesiAktif = r.ok ? r : null;
+    renderSesiBanner();
+  } catch(e) {}
 }
 
-async function handleGuruFingerprint() {
-  const sesi = document.getElementById('guruSesiSelect').value;
-  if (!sesi) { showMsg('guruFpMsg','Pilih sesi dulu', false); return; }
+function renderSesiBanner() {
+  const buildBanner = (elId) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!currentSesiAktif) {
+      el.innerHTML = `
+        <div class="sesi-banner err">
+          <div class="label">Status Sesi</div>
+          <div class="name">Tidak Ada Sesi</div>
+          <div class="time">Saat ini tidak ada sesi berlangsung</div>
+        </div>`;
+      return;
+    }
+    const s = currentSesiAktif.info;
+    const st = currentSesiAktif.status;
+    let cls = 'sesi-banner';
+    let tagText = '';
+    if (st === 'TW') { cls += ''; tagText = '🟢 Tepat Waktu'; }
+    else if (st === 'TL') { cls += ' warn'; tagText = '🟡 Terlambat'; }
+    else { cls += ' err'; tagText = '🔴 Ditutup'; }
+    el.innerHTML = `
+      <div class="${cls}">
+        <div class="label">Sesi Berlangsung</div>
+        <div class="name">${s.sesi}</div>
+        <div class="time">TW ${s.mulaiTW}-${s.batasTW} | TL ${s.batasTW}-${s.batasTL}</div>
+        <div class="status-tag">${tagText}</div>
+      </div>`;
+  };
+  buildBanner('siswaSesiBanner');
+  buildBanner('guruSesiBanner');
+}
+
+function startSesiWatcher() {
+  if (sesiTimer) clearInterval(sesiTimer);
+  refreshSesiAktif();
+  sesiTimer = setInterval(refreshSesiAktif, 30000); // update tiap 30 detik
+}
+
+/*******************************************************
+ * FINGERPRINT
+ *******************************************************/
+async function handleFingerprint() {
+  if (!fiturGlobal.izinSidikJariSiswa || fiturGlobal.izinSidikJariSiswa !== 'YA') {
+    showPopup('Sidik jari untuk siswa dinonaktifkan admin', false); return;
+  }
+  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
+  const sesi = currentSesiAktif.sesi;
 
   if (!window.PublicKeyCredential) {
-    showMsg('guruFpMsg','HP/browser tidak mendukung sidik jari', false); return;
+    showPopup('HP/browser tidak mendukung sidik jari', false); return;
   }
 
   try {
     if (!currentUser.hasFingerprint) {
+      showLoading('Mendaftarkan sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       const userId = new TextEncoder().encode(currentUser.user.id);
       const cred = await navigator.credentials.create({
         publicKey: {
-          challenge: challenge,
-          rp: { name: 'Absensi Online' },
+          challenge, rp: { name: 'Absensi Online' },
           user: { id: userId, name: currentUser.user.id, displayName: currentUser.user.nama },
           pubKeyCredParams: [{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
-          authenticatorSelection: {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required'
-          },
-          timeout: 60000,
-          attestation: 'none'
+          authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+          timeout: 60000, attestation: 'none'
         }
       });
       if (!cred) throw new Error('Registrasi dibatalkan');
       const reg = await api('registerFingerprint', {
-        id: currentUser.user.id,
-        nama: currentUser.user.nama,
-        role: 'guru',
-        credentialId: b64(cred.rawId),
-        publicKey: ''
+        id: currentUser.user.id, nama: currentUser.user.nama,
+        role: 'siswa', credentialId: b64(cred.rawId), publicKey: ''
       });
-      if (!reg.ok) { showMsg('guruFpMsg', reg.msg, false); return; }
+      if (!reg.ok) { showPopup(reg.msg, false); return; }
       currentUser.hasFingerprint = true;
       saveSession();
-      updateFingerprintButton('guru');
-      showMsg('guruFpMsg','✅ Sidik jari terdaftar. Tekan lagi untuk absen.', true);
+      updateFingerprintButton('siswa');
+      showPopup('✅ Sidik jari terdaftar. Tekan tombol lagi untuk absen.', true, 2500);
     } else {
+      showLoading('Verifikasi sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
       await navigator.credentials.get({
         publicKey: { challenge, timeout: 60000, userVerification: 'required' }
       });
       const r = await api('absenFingerprint', {
-        id: currentUser.user.id,
-        nama: currentUser.user.nama,
-        role: 'guru',
-        sesi: sesi
+        id: currentUser.user.id, nama: currentUser.user.nama, role: 'siswa', sesi
       });
-      showMsg('guruFpMsg', r.msg, r.ok);
-      if (r.ok) {
-        if (navigator.vibrate) navigator.vibrate(200);
-        muatRiwayat();
-      }
+      if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
+      showPopup(r.msg, r.ok, 2500);
     }
   } catch(e) {
-    if (e.name === 'NotAllowedError') showMsg('guruFpMsg','Dibatalkan / tidak ada sidik jari', false);
-    else showMsg('guruFpMsg','Error: '+e.message, false);
+    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false);
+    else showPopup('Error: '+e.message, false, 3000);
+  }
+}
+
+async function handleGuruFingerprint() {
+  if (!fiturGlobal.izinSidikJariGuru || fiturGlobal.izinSidikJariGuru !== 'YA') {
+    showPopup('Sidik jari untuk guru dinonaktifkan admin', false); return;
+  }
+  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
+  const sesi = currentSesiAktif.sesi;
+
+  if (!window.PublicKeyCredential) {
+    showPopup('HP/browser tidak mendukung sidik jari', false); return;
+  }
+
+  try {
+    if (!currentUser.hasFingerprint) {
+      showLoading('Mendaftarkan sidik jari...');
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const userId = new TextEncoder().encode(currentUser.user.id);
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge, rp: { name: 'Absensi Online' },
+          user: { id: userId, name: currentUser.user.id, displayName: currentUser.user.nama },
+          pubKeyCredParams: [{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+          authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+          timeout: 60000, attestation: 'none'
+        }
+      });
+      if (!cred) throw new Error('Registrasi dibatalkan');
+      const reg = await api('registerFingerprint', {
+        id: currentUser.user.id, nama: currentUser.user.nama,
+        role: 'guru', credentialId: b64(cred.rawId), publicKey: ''
+      });
+      if (!reg.ok) { showPopup(reg.msg, false); return; }
+      currentUser.hasFingerprint = true;
+      saveSession();
+      updateFingerprintButton('guru');
+      showPopup('✅ Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2500);
+    } else {
+      showLoading('Verifikasi sidik jari...');
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      await navigator.credentials.get({
+        publicKey: { challenge, timeout: 60000, userVerification: 'required' }
+      });
+      const r = await api('absenFingerprint', {
+        id: currentUser.user.id, nama: currentUser.user.nama, role: 'guru', sesi
+      });
+      if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
+      showPopup(r.msg, r.ok, 2500);
+    }
+  } catch(e) {
+    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false);
+    else showPopup('Error: '+e.message, false, 3000);
   }
 }
 
 function updateFingerprintButton(who) {
   if (who === 'siswa') {
     const btn = document.getElementById('btnFingerprint');
-    if (currentUser.hasFingerprint) btn.textContent = '🖐️ Absen Sidik Jari';
-    else btn.textContent = '🖐️ Daftarkan Sidik Jari';
+    const area = document.getElementById('fingerprintArea');
+    if (fiturGlobal.izinSidikJariSiswa !== 'YA') {
+      area.classList.add('hidden'); return;
+    }
+    area.classList.remove('hidden');
+    btn.textContent = currentUser.hasFingerprint ? '🖐️ Absen Sidik Jari' : '🖐️ Daftarkan Sidik Jari';
   } else if (who === 'guru') {
     const btn = document.getElementById('guruBtnFingerprint');
-    if (currentUser.hasFingerprint) btn.textContent = '🖐️ Absen Sidik Jari';
-    else btn.textContent = '🖐️ Daftarkan Sidik Jari';
+    const area = document.getElementById('guruFingerprintArea');
+    if (fiturGlobal.izinSidikJariGuru !== 'YA') {
+      area.classList.add('hidden'); return;
+    }
+    area.classList.remove('hidden');
+    btn.textContent = currentUser.hasFingerprint ? '🖐️ Absen Sidik Jari' : '🖐️ Daftarkan Sidik Jari';
   }
 }
 
@@ -581,7 +764,7 @@ function b64(buffer) {
 }
 
 /*******************************************************
- * KAMERA GURU (scan siswa saja)
+ * KAMERA GURU
  *******************************************************/
 async function guruBukaKamera() {
   if (scanning.guru) return;
@@ -591,16 +774,14 @@ async function guruBukaKamera() {
     await cameras.guru.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 } },
-      txt => onGuruScanSuccess(txt),
-      () => {}
+      txt => onGuruScanSuccess(txt), () => {}
     );
     document.getElementById('guruBtnBuka').disabled = true;
   } catch(e) {
     scanning.guru = false;
-    showMsg('guruScanMsg','Gagal buka kamera: '+e.message, false);
+    showPopup('Gagal buka kamera: '+e.message, false);
   }
 }
-
 async function guruTutupKamera() {
   if (cameras.guru && scanning.guru) {
     try { await cameras.guru.stop(); await cameras.guru.clear(); } catch(e){}
@@ -609,29 +790,24 @@ async function guruTutupKamera() {
   const b = document.getElementById('guruBtnBuka');
   if (b) b.disabled = false;
 }
-
 function onGuruScanSuccess(txt) {
   const now = Date.now();
   if (txt === lastScan.guru.code && now - lastScan.guru.time < 3000) return;
   lastScan.guru = { code: txt, time: now };
   guruProsesScan(txt);
 }
-
 async function guruProsesScan(barcode) {
-  const sesi = document.getElementById('guruSesiSelect').value;
-  if (!sesi) { showMsg('guruScanMsg','Pilih sesi dulu', false); return; }
+  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
+  showLoading('Memproses absensi...');
   try {
     const r = await api('scan', {
-      scannerRole: 'guru',
-      scannerId: currentUser.user.id,
-      barcode: String(barcode),
-      sesi: sesi
+      scannerRole: 'guru', scannerId: currentUser.user.id,
+      barcode: String(barcode), sesi: currentSesiAktif.sesi
     });
-    showMsg('guruScanMsg', r.msg, r.ok);
     if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-  } catch(e) { showMsg('guruScanMsg','Gagal: '+e.message, false); }
+    showPopup(r.msg, r.ok, 2500);
+  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
 }
-
 function guruSubmitManual() {
   const v = document.getElementById('guruManualBarcode').value.trim();
   if (!v) return;
@@ -640,13 +816,9 @@ function guruSubmitManual() {
 }
 
 /*******************************************************
- * KAMERA ADMIN (switch siswa/guru)
+ * KAMERA ADMIN
  *******************************************************/
-function onAdminTargetChange() {
-  // tidak perlu reset apa-apa, hanya label info
-  adminTutupKamera();
-}
-
+function onAdminTargetChange() { adminTutupKamera(); }
 async function adminBukaKamera() {
   if (scanning.admin) return;
   try {
@@ -655,16 +827,14 @@ async function adminBukaKamera() {
     await cameras.admin.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 250 } },
-      txt => onAdminScanSuccess(txt),
-      () => {}
+      txt => onAdminScanSuccess(txt), () => {}
     );
     document.getElementById('adminBtnBuka').disabled = true;
   } catch(e) {
     scanning.admin = false;
-    showMsg('adminScanMsg','Gagal buka kamera: '+e.message, false);
+    showPopup('Gagal buka kamera: '+e.message, false);
   }
 }
-
 async function adminTutupKamera() {
   if (cameras.admin && scanning.admin) {
     try { await cameras.admin.stop(); await cameras.admin.clear(); } catch(e){}
@@ -673,29 +843,25 @@ async function adminTutupKamera() {
   const b = document.getElementById('adminBtnBuka');
   if (b) b.disabled = false;
 }
-
 function onAdminScanSuccess(txt) {
   const now = Date.now();
   if (txt === lastScan.admin.code && now - lastScan.admin.time < 3000) return;
   lastScan.admin = { code: txt, time: now };
   adminProsesScan(txt);
 }
-
 async function adminProsesScan(barcode) {
   const sesi = document.getElementById('adminSesiSelect').value;
-  if (!sesi) { showMsg('adminScanMsg','Pilih sesi dulu', false); return; }
+  if (!sesi) { showPopup('Pilih sesi dulu', false); return; }
+  showLoading('Memproses absensi...');
   try {
     const r = await api('scan', {
-      scannerRole: 'admin',
-      scannerId: currentUser.user.id,
-      barcode: String(barcode),
-      sesi: sesi
+      scannerRole: 'admin', scannerId: currentUser.user.id,
+      barcode: String(barcode), sesi: sesi
     });
-    showMsg('adminScanMsg', r.msg, r.ok);
     if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-  } catch(e) { showMsg('adminScanMsg','Gagal: '+e.message, false); }
+    showPopup(r.msg, r.ok, 2500);
+  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
 }
-
 function adminSubmitManual() {
   const v = document.getElementById('adminManualBarcode').value.trim();
   if (!v) return;
@@ -704,27 +870,46 @@ function adminSubmitManual() {
 }
 
 /*******************************************************
- * RIWAYAT
+ * RIWAYAT (dipisah guru & siswa)
  *******************************************************/
 async function muatRiwayat() {
-  const r = await api('riwayat');
-  if (!r.ok) return;
-  const build = (tbodyId) => {
-    const tbody = document.querySelector('#'+tbodyId+' tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    r.data.slice(0, 30).forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${(row.timestamp.split(' ')[1]||'')}</td>
-        <td>${row.nama}</td>
-        <td>${row.sesi}</td>
-        <td><span class="badge ${row.status}">${row.status}</span></td>`;
-      tbody.appendChild(tr);
-    });
-  };
-  build('siswaRiwayat');
-  build('guruRiwayat');
+  try {
+    const r = await api('riwayat');
+    if (!r.ok) return;
+    const data = r.data;
+
+    // Filter
+    const dataSiswa = data.filter(x => x.peran === 'siswa');
+    const dataGuru = data.filter(x => x.peran === 'guru');
+
+    // Helper: render tabel
+    const renderTable = (tbodyId, arr, onlyMe = false) => {
+      const tbody = document.querySelector('#'+tbodyId+' tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const filtered = onlyMe ? arr.filter(x => String(x.id) === String(currentUser.user.id)) : arr;
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#94a3b8;padding:12px;">Belum ada data</td></tr>`;
+        return;
+      }
+      filtered.slice(0, 50).forEach((row, i) => {
+        const tr = document.createElement('tr');
+        const jam = (row.timestamp.split(' ')[1] || row.timestamp).substring(0,5);
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td>${row.nama}</td>
+          <td>${jam}</td>
+          <td><span class="badge ${row.status}">${row.status}</span></td>`;
+        tbody.appendChild(tr);
+      });
+    };
+
+    // Siswa page: riwayat saya
+    renderTable('siswaRiwayat', dataSiswa, true);
+    // Guru page: riwayat siswa & guru
+    renderTable('guruRiwayatSiswa', dataSiswa, false);
+    renderTable('guruRiwayatGuru', dataGuru, false);
+  } catch(e) {}
 }
 
 /*******************************************************
@@ -733,10 +918,11 @@ async function muatRiwayat() {
 function switchTab(tab) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
   document.querySelector(`.tabs button[data-tab="${tab}"]`).classList.add('active');
-  ['scan','sesi','izin','libur','user'].forEach(t => {
+  ['scan','sesi','izin','libur','user','fitur'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
   });
   if (tab !== 'scan') adminTutupKamera();
+  if (tab === 'fitur') adminLoadFitur();
 }
 
 /*******************************************************
@@ -752,10 +938,8 @@ function renderSesiList() {
         <span class="small-info">TW ${s.mulaiTW}-${s.batasTW} | TL ${s.batasTW}-${s.batasTL}</span>
       </div>
       <button class="danger sm" style="flex:1" onclick="adminHapusSesi('${s.sesi}')">🗑️</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 async function adminTambahSesi() {
   const p = {
     sesi: document.getElementById('newSesiNama').value.trim(),
@@ -765,21 +949,19 @@ async function adminTambahSesi() {
     tutup: document.getElementById('newSesiBatasTL').value
   };
   if (!p.sesi || !p.mulaiTW || !p.batasTW || !p.batasTL) {
-    showMsg('sesiMsg','Semua field wajib diisi', false); return;
+    showPopup('Semua field wajib diisi', false); return;
   }
+  showLoading('Menyimpan sesi...');
   const r = await api('tambahSesi', p);
-  showMsg('sesiMsg', r.msg, r.ok);
-  if (r.ok) {
-    document.getElementById('newSesiNama').value = '';
-    await muatSesi(); renderSesiList();
-  }
+  if (r.ok) { document.getElementById('newSesiNama').value=''; await muatSesi(); renderSesiList(); }
+  showPopup(r.msg, r.ok);
 }
-
 async function adminHapusSesi(sesi) {
   if (!confirm('Hapus ' + sesi + '?')) return;
+  showLoading('Menghapus...');
   const r = await api('hapusSesi', { sesi });
-  showMsg('sesiMsg', r.msg, r.ok);
   if (r.ok) { await muatSesi(); renderSesiList(); }
+  showPopup(r.msg, r.ok);
 }
 
 /*******************************************************
@@ -791,15 +973,38 @@ async function adminSimpanIzin() {
   const nama = document.getElementById('izinNama').value.trim();
   const sesi = document.getElementById('izinSesiSelect').value;
   const ket = document.getElementById('izinKet').value;
-
-  if (!id || !nama || !sesi) {
-    showMsg('izinMsg','ID, Nama, dan Sesi wajib diisi', false); return;
-  }
+  if (!id || !nama || !sesi) { showPopup('ID, Nama, dan Sesi wajib diisi', false); return; }
+  showLoading('Menyimpan izin...');
   const r = await api('simpanIzin', { role, id, nama, sesi, keterangan: ket });
-  showMsg('izinMsg', r.msg, r.ok);
-  if (r.ok) {
-    document.getElementById('izinId').value = '';
-    document.getElementById('izinNama').value = '';
+  if (r.ok) { document.getElementById('izinId').value=''; document.getElementById('izinNama').value=''; }
+  showPopup(r.msg, r.ok);
+}
+
+/*******************************************************
+ * GURU - INPUT IZIN SISWA
+ *******************************************************/
+async function guruSimpanIzin() {
+  if (fiturGlobal.izinIzinSakitSiswa !== 'YA') {
+    showPopup('Fitur input izin siswa dinonaktifkan admin', false); return;
+  }
+  const nisn = document.getElementById('guruIzinNisn').value.trim();
+  const ket = document.getElementById('guruIzinKet').value;
+  if (!/^\d{8,10}$/.test(nisn)) { showPopup('NISN harus 8-10 digit', false); return; }
+  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
+
+  showLoading('Menyimpan izin...');
+  try {
+    // Cari nama siswa
+    const cekR = await api('cekSiswa', { nisn }); // opsional, atau langsung kirim nama kosong
+    // Fallback: kirim langsung tanpa nama (backend bisa cari sendiri)
+    const r = await api('simpanIzin', {
+      role: 'siswa', id: nisn, nama: 'Siswa ' + nisn,
+      sesi: currentSesiAktif.sesi, keterangan: ket
+    });
+    if (r.ok) { document.getElementById('guruIzinNisn').value=''; muatRiwayat(); }
+    showPopup(r.msg, r.ok);
+  } catch(e) {
+    showPopup('Gagal: '+e.message, false, 3000);
   }
 }
 
@@ -809,14 +1014,12 @@ async function adminSimpanIzin() {
 async function adminSimpanLibur() {
   const tanggal = document.getElementById('liburTanggal').value;
   const keterangan = document.getElementById('liburKet').value.trim();
-  if (!tanggal || !keterangan) {
-    showMsg('liburMsg','Tanggal & keterangan wajib', false); return;
-  }
+  if (!tanggal || !keterangan) { showPopup('Tanggal & keterangan wajib', false); return; }
+  showLoading('Menyimpan...');
   const r = await api('simpanLibur', { tanggal, keterangan });
-  showMsg('liburMsg', r.msg, r.ok);
-  if (r.ok) { document.getElementById('liburKet').value = ''; adminLoadLibur(); }
+  if (r.ok) { document.getElementById('liburKet').value=''; adminLoadLibur(); }
+  showPopup(r.msg, r.ok);
 }
-
 async function adminLoadLibur() {
   const r = await api('listLibur');
   const el = document.getElementById('liburList');
@@ -825,18 +1028,18 @@ async function adminLoadLibur() {
     <div class="row" style="align-items:center;margin-bottom:4px;">
       <div style="flex:3;font-size:.8rem">${l.tanggal} — ${l.keterangan}</div>
       <button class="danger sm" style="flex:1" onclick="adminHapusLibur('${l.tanggal}')">🗑️</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 async function adminHapusLibur(tanggal) {
   if (!confirm('Hapus libur ' + tanggal + '?')) return;
+  showLoading('Menghapus...');
   const r = await api('hapusLibur', { tanggal });
   if (r.ok) adminLoadLibur();
+  showPopup(r.msg, r.ok);
 }
 
 /*******************************************************
- * ADMIN - USER (Reset PIN & Fingerprint)
+ * ADMIN - USER & FINGERPRINT
  *******************************************************/
 async function adminLoadUsers() {
   const r = await api('listUsers');
@@ -845,19 +1048,17 @@ async function adminLoadUsers() {
   el.innerHTML = r.data.map(u => `
     <div class="row" style="align-items:center;margin-bottom:6px;">
       <div style="flex:3;font-size:.8rem"><strong>${u.nama}</strong><br><span class="small-info">${u.id} • ${u.role}</span></div>
-      <button class="secondary sm" style="flex:1" onclick="adminResetPin('${u.id}','${u.nama}')">🔑 Reset PIN</button>
-    </div>
-  `).join('');
+      <button class="secondary sm" style="flex:1" onclick="adminResetPin('${u.id}','${u.nama}')">🔑 PIN</button>
+    </div>`).join('');
 }
-
 async function adminResetPin(id, nama) {
   const newPin = prompt('PIN baru untuk ' + nama + ' (4 digit):');
   if (!newPin) return;
-  if (!/^\d{4}$/.test(newPin)) { alert('PIN harus 4 digit'); return; }
+  if (!/^\d{4}$/.test(newPin)) { showPopup('PIN harus 4 digit', false); return; }
+  showLoading('Menyimpan...');
   const r = await api('resetPin', { id, newPin });
-  alert(r.msg);
+  showPopup(r.msg, r.ok);
 }
-
 async function adminLoadFp() {
   const r = await api('listFingerprint');
   const el = document.getElementById('fpList');
@@ -866,37 +1067,56 @@ async function adminLoadFp() {
     <div class="row" style="align-items:center;margin-bottom:6px;">
       <div style="flex:3;font-size:.8rem"><strong>${f.nama}</strong><br><span class="small-info">${f.id} • ${f.role}</span></div>
       <button class="danger sm" style="flex:1" onclick="adminResetFp('${f.id}','${f.nama}')">🗑️ Reset</button>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 async function adminResetFp(id, nama) {
   if (!confirm('Reset sidik jari ' + nama + '?')) return;
+  showLoading('Mereset...');
   const r = await api('resetFingerprint', { id });
-  alert(r.msg);
   if (r.ok) adminLoadFp();
+  showPopup(r.msg, r.ok);
+}
+
+/*******************************************************
+ * ADMIN - FITUR (SWITCH)
+ *******************************************************/
+async function adminLoadFitur() {
+  const r = await api('getFitur');
+  if (!r.ok) return;
+  fiturGlobal = r.fitur;
+  document.getElementById('fitSidikSiswa').checked = fiturGlobal.izinSidikJariSiswa === 'YA';
+  document.getElementById('fitSidikGuru').checked  = fiturGlobal.izinSidikJariGuru === 'YA';
+  document.getElementById('fitIzinSiswa').checked  = fiturGlobal.izinIzinSakitSiswa === 'YA';
+  document.getElementById('fitIzinGuru').checked   = fiturGlobal.izinIzinSakitGuru === 'YA';
+}
+async function adminSetFitur() {
+  const updates = {
+    izinSidikJariSiswa: document.getElementById('fitSidikSiswa').checked ? 'YA' : 'TIDAK',
+    izinSidikJariGuru:  document.getElementById('fitSidikGuru').checked  ? 'YA' : 'TIDAK',
+    izinIzinSakitSiswa: document.getElementById('fitIzinSiswa').checked  ? 'YA' : 'TIDAK',
+    izinIzinSakitGuru:  document.getElementById('fitIzinGuru').checked   ? 'YA' : 'TIDAK'
+  };
+  showLoading('Menyimpan pengaturan...');
+  const r = await api('setFitur', { fitur: updates });
+  if (r.ok) {
+    fiturGlobal = updates;
+    // Update UI guru & siswa
+    if (currentUser.role === 'siswa') updateFingerprintButton('siswa');
+    if (currentUser.role === 'guru') updateFingerprintButton('guru');
+  }
+  showPopup(r.msg, r.ok);
 }
 
 /*******************************************************
  * UTIL
  *******************************************************/
-function showMsg(elId, text, ok) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  el.textContent = text;
-  el.className = 'msg ' + (ok ? 'ok' : 'err');
-  el.classList.remove('hidden');
-  setTimeout(() => el.classList.add('hidden'), 5000);
-}
-
-/* Event listener global */
 document.addEventListener('keypress', (e) => {
   if (e.target.id === 'loginInput' && e.key === 'Enter') doLogin();
   if (e.target.id === 'guruManualBarcode' && e.key === 'Enter') guruSubmitManual();
   if (e.target.id === 'adminManualBarcode' && e.key === 'Enter') adminSubmitManual();
 });
 document.addEventListener('input', (e) => {
-  if (['loginInput','guruManualBarcode','adminManualBarcode','izinId'].includes(e.target.id)) {
+  if (['loginInput','guruManualBarcode','adminManualBarcode','izinId','guruIzinNisn'].includes(e.target.id)) {
     e.target.value = e.target.value.replace(/\D/g,'');
   }
 });
