@@ -303,33 +303,47 @@
       <button class="success full" onclick="adminSimpanIzin()">💾 Simpan</button>
     </div>
 
-    <!-- Tab Izin Sidik Jari (per-user harian) -->
+    <!-- Tab Izin Sidik Jari (per-user harian, list semua user + switch) -->
     <div id="tab-izinfp" class="card hidden">
       <h4>🖐️ Izin Sidik Jari Harian</h4>
       <div class="small-info">
-        Berikan izin sidik jari hanya untuk user tertentu (misal siswa/guru yang keluar untuk lomba).
-        Izin berlaku <strong>hari ini saja</strong>.
+        Aktifkan izin sidik jari untuk user tertentu <strong>hari ini saja</strong>.
+        Cocok untuk kondisi khusus seperti PJJ, lomba, atau bencana.
       </div>
-
-      <label>ID (NISN / NIP / ID Admin)</label>
-      <input id="izinFpId" placeholder="NISN / NIP" inputmode="numeric">
-      <label>Nama</label>
-      <input id="izinFpNama" placeholder="Nama (otomatis terisi)" readonly>
-      <label>Role</label>
-      <input id="izinFpRole" placeholder="-" readonly>
-      <label>Alasan</label>
-      <input id="izinFpAlasan" placeholder="Contoh: Lomba OSN di Jakarta">
-      <div class="row">
-        <button class="success" onclick="adminCariUserIzinFp()">🔍 Cari</button>
-        <button class="success" onclick="adminSetIzinFp()">➕ Beri Izin</button>
+    
+      <!-- Bulk action -->
+      <div class="row" style="margin-bottom:12px;">
+        <button class="success sm" style="flex:1" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button>
+        <button class="danger sm" style="flex:1" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button>
       </div>
-
-      <hr style="margin:12px 0;border-color:#334155">
-      <h4>Daftar Izin Hari Ini</h4>
-      <div id="izinFpList" style="max-height:250px;overflow:auto;"></div>
-      <button class="secondary full" style="margin-top:8px;" onclick="adminLoadIzinFp()">🔄 Refresh</button>
+    
+      <!-- Filter -->
+      <label>Filter</label>
+      <div class="row" style="margin-bottom:8px;">
+        <select id="izinFpFilterRole" onchange="renderIzinFpList()">
+          <option value="all">Semua Role</option>
+          <option value="siswa">Siswa</option>
+          <option value="guru">Guru</option>
+        </select>
+        <select id="izinFpFilterStatus" onchange="renderIzinFpList()">
+          <option value="all">Semua Status</option>
+          <option value="allowed">Diizinkan</option>
+          <option value="denied">Ditolak</option>
+        </select>
+      </div>
+    
+      <input id="izinFpSearch" placeholder="🔍 Cari nama / ID..." oninput="renderIzinFpList()" style="margin-bottom:12px;">
+    
+      <!-- Daftar user -->
+      <div style="font-size:.75rem;color:#94a3b8;margin-bottom:6px;">
+        Menampilkan <strong id="izinFpCount">0</strong> user •
+        <span style="color:#22c55e">✅ <span id="izinFpCountOn">0</span></span> diizinkan
+      </div>
+      <div id="izinFpList" style="max-height:60vh;overflow:auto;border-radius:8px;"></div>
+    
+      <button class="secondary full" style="margin-top:10px;" onclick="adminLoadIzinFp()">🔄 Refresh</button>
     </div>
-
+   
     <!-- Tab Libur -->
     <div id="tab-libur" class="card hidden">
       <h4>Hari Libur</h4>
@@ -409,7 +423,7 @@
 /*******************************************************
  * KONFIG
  *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbx4gnFQVwPWwg41EmpKIMUbstQvxwdibbLJQwx6dDl0Oxsg2fG94MFkfrpNMHctqc_C/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwlp1yrqvJRPh4Q905I_W-8_VnW8bU-kBtRlmWaCQvLGfvaQthzxo6DxK0YTiZw8YA/exec';
 const LS_KEY = 'absensi_session_v4';
 
 /*******************************************************
@@ -1080,71 +1094,175 @@ async function guruSimpanIzin() {
   } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
 }
 
-/*******************************************************
- * ADMIN - IZIN FINGERPRINT (per user harian)
- *******************************************************/
-async function adminCariUserIzinFp() {
-  const id = document.getElementById('izinFpId').value.trim();
-  if (!id) { showPopup('Masukkan ID dulu', false); return; }
-  showLoading('Mencari user...');
-  try {
-    const r = await api('cariUser', { id });
-    if (!r.ok) { showPopup(r.msg, false); return; }
-    document.getElementById('izinFpNama').value = r.nama;
-    document.getElementById('izinFpRole').value = r.role + (r.extra ? ' - ' + r.extra : '');
-    showPopup('Ditemukan: ' + r.nama, true, 1500);
-  } catch(e) { showPopup('Gagal: '+e.message, false); }
-}
-
-async function adminSetIzinFp() {
-  const id = document.getElementById('izinFpId').value.trim();
-  const nama = document.getElementById('izinFpNama').value.trim();
-  const roleFull = document.getElementById('izinFpRole').value;
-  const role = roleFull.split(' - ')[0].trim();
-  const alasan = document.getElementById('izinFpAlasan').value.trim() || 'Izin khusus';
-  if (!id || !nama) { showPopup('Cari user dulu lewat tombol 🔍', false); return; }
-  showLoading('Memberi izin...');
-  try {
-    const r = await api('setIzinFp', { id, nama, role, alasan });
-    if (r.ok) {
-      document.getElementById('izinFpId').value = '';
-      document.getElementById('izinFpNama').value = '';
-      document.getElementById('izinFpRole').value = '';
-      document.getElementById('izinFpAlasan').value = '';
-      adminLoadIzinFp();
+    /*******************************************************
+     * ADMIN - IZIN FINGERPRINT (list semua user + switch)
+     *******************************************************/
+    let izinFpData = []; // cache
+    
+    async function adminLoadIzinFp() {
+      showLoading('Memuat daftar user...');
+      try {
+        const r = await api('listIzinFpAll');
+        closePopup();
+        if (!r.ok) { showPopup(r.msg, false); return; }
+        izinFpData = r.data || [];
+        renderIzinFpList();
+      } catch(e) {
+        showPopup('Gagal memuat: '+e.message, false, 3000);
+      }
     }
-    showPopup(r.msg, r.ok);
-  } catch(e) { showPopup('Gagal: '+e.message, false); }
-}
-
-async function adminLoadIzinFp() {
-  try {
-    const r = await api('getIzinFp');
-    const el = document.getElementById('izinFpList');
-    if (!el) return;
-    if (!r.ok || !r.data.length) {
-      el.innerHTML = '<div class="small-info">Belum ada izin sidik jari hari ini.</div>';
-      return;
+    
+    function renderIzinFpList() {
+      const el = document.getElementById('izinFpList');
+      if (!el) return;
+    
+      const filterRole = document.getElementById('izinFpFilterRole').value;
+      const filterStatus = document.getElementById('izinFpFilterStatus').value;
+      const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
+    
+      let list = izinFpData.slice();
+    
+      if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
+      if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
+      if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
+      if (search) list = list.filter(u =>
+        String(u.nama).toLowerCase().includes(search) ||
+        String(u.id).toLowerCase().includes(search) ||
+        String(u.extra || '').toLowerCase().includes(search)
+      );
+    
+      // Update counter
+      const totalOn = izinFpData.filter(u => u.allowed).length;
+      document.getElementById('izinFpCount').textContent = list.length;
+      document.getElementById('izinFpCountOn').textContent = totalOn;
+    
+      if (!list.length) {
+        el.innerHTML = '<div class="small-info" style="text-align:center;padding:20px;">Tidak ada user sesuai filter.</div>';
+        return;
+      }
+    
+      // Render baris per user
+      el.innerHTML = list.map(u => {
+        const roleBadge = `<span class="badge ${u.role}">${u.role}</span>`;
+        const info = u.extra ? `<span class="small-info">${u.extra}</span>` : '';
+        const alasan = u.allowed && u.alasan
+          ? `<div style="font-size:.7rem;color:#6ee7b7;margin-top:2px;">📌 ${u.alasan}</div>`
+          : '';
+        return `
+          <div class="switch-row" style="padding:10px 4px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:.88rem;color:#e2e8f0;font-weight:500;">${u.nama}</div>
+              <div style="font-size:.72rem;color:#94a3b8;margin-top:2px;">
+                ${u.id} • ${roleBadge} ${info}
+              </div>
+              ${alasan}
+            </div>
+            <label class="switch">
+              <input type="checkbox" ${u.allowed ? 'checked' : ''}
+                     onchange="adminToggleIzinFp('${u.id}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>`;
+      }).join('');
     }
-    el.innerHTML = r.data.map(f => `
-      <div class="row" style="align-items:center;margin-bottom:6px;">
-        <div style="flex:3;font-size:.8rem">
-          <strong>${f.nama}</strong><br>
-          <span class="small-info">${f.id} • ${f.role} • ${f.alasan}</span>
-        </div>
-        <button class="danger sm" style="flex:1" onclick="adminHapusIzinFp('${f.id}')">🗑️ Cabut</button>
-      </div>
-    `).join('');
-  } catch(e) {}
-}
-
-async function adminHapusIzinFp(id) {
-  if (!confirm('Cabut izin sidik jari untuk ID ' + id + '?')) return;
-  showLoading('Mencabut...');
-  const r = await api('hapusIzinFp', { id });
-  if (r.ok) adminLoadIzinFp();
-  showPopup(r.msg, r.ok);
-}
+    
+    async function adminToggleIzinFp(id, allowed) {
+      const user = izinFpData.find(u => u.id === id);
+      if (!user) return;
+    
+      let alasan = 'Izin khusus';
+      if (allowed) {
+        // Tanya alasan (opsional)
+        const input = prompt(`Beri izin sidik jari untuk ${user.nama}.\nAlasan (opsional):`, 'Kegiatan khusus');
+        if (input === null) {
+          // Batal → refresh tampilan
+          renderIzinFpList();
+          return;
+        }
+        alasan = input.trim() || 'Izin khusus';
+      }
+    
+      // Optimistic update
+      user.allowed = allowed;
+      user.alasan = allowed ? alasan : '';
+      renderIzinFpList();
+    
+      try {
+        const r = allowed
+          ? await api('setIzinFp', { id, nama: user.nama, role: user.role, alasan })
+          : await api('hapusIzinFp', { id });
+    
+        if (!r.ok) {
+          // Rollback
+          user.allowed = !allowed;
+          user.alasan = '';
+          renderIzinFpList();
+          showPopup(r.msg, false, 2000);
+          return;
+        }
+        showPopup(r.msg, true, 1200);
+      } catch(e) {
+        user.allowed = !allowed;
+        renderIzinFpList();
+        showPopup('Gagal: '+e.message, false, 2500);
+      }
+    }
+    
+    async function adminBulkIzinFp(allowed) {
+      // Kumpulkan ID yang visible (sesuai filter) saja
+      const filterRole = document.getElementById('izinFpFilterRole').value;
+      const filterStatus = document.getElementById('izinFpFilterStatus').value;
+      const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
+    
+      let list = izinFpData.slice();
+      if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
+      if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
+      if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
+      if (search) list = list.filter(u =>
+        String(u.nama).toLowerCase().includes(search) ||
+        String(u.id).toLowerCase().includes(search) ||
+        String(u.extra || '').toLowerCase().includes(search)
+      );
+    
+      // Yang perlu diubah saja
+      const target = allowed
+        ? list.filter(u => !u.allowed)     // belum diizinkan
+        : list.filter(u => u.allowed);     // sudah diizinkan
+    
+      if (!target.length) {
+        showPopup('Tidak ada user yang perlu diubah', false, 1800); return;
+      }
+    
+      const aksi = allowed ? 'IZINKAN' : 'TOLAK';
+      const konfirmasi = confirm(
+        `${aksi} sidik jari untuk ${target.length} user?\n\n` +
+        `Filter aktif: ${filterRole === 'all' ? 'Semua Role' : filterRole}, ` +
+        `${filterStatus === 'all' ? 'Semua Status' : filterStatus}` +
+        (search ? `, cari "${search}"` : '')
+      );
+      if (!konfirmasi) return;
+    
+      let alasan = 'Izin massal';
+      if (allowed) {
+        const input = prompt('Alasan pemberian izin massal (opsional):', 'PJJ / Kegiatan khusus');
+        if (input === null) return;
+        alasan = input.trim() || 'Izin massal';
+      }
+    
+      showLoading(`${allowed ? 'Memberi' : 'Mencabut'} izin ${target.length} user...`);
+      try {
+        const ids = target.map(u => u.id);
+        const r = await api('setIzinFpBulk', { ids, allowed, alasan });
+        if (r.ok) {
+          // Refresh dari server
+          await adminLoadIzinFp();
+        } else {
+          showPopup(r.msg, false);
+        }
+      } catch(e) {
+        showPopup('Gagal: '+e.message, false, 3000);
+      }
+    }
 
 /*******************************************************
  * ADMIN - LIBUR
