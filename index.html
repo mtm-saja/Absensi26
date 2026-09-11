@@ -81,7 +81,7 @@
 <div class="container">
   <h1>📷 Absensi Online QR</h1>
 
-  <!-- ============ LOGIN ============ -->
+  <!-- LOGIN -->
   <div id="loginPage" class="card">
     <h3>Login</h3>
     <label>Masukkan NISN Siswa atau PIN Guru/Admin</label>
@@ -91,7 +91,7 @@
     <div class="info">🔹 Siswa: NISN (8–10 digit) &nbsp;|&nbsp; 🔹 Guru/Admin: PIN (4 digit)</div>
   </div>
 
-  <!-- ============ HALAMAN SISWA ============ -->
+  <!-- SISWA -->
   <div id="siswaPage" class="hidden">
     <div class="card">
       <div class="hdr">
@@ -131,7 +131,7 @@
     </div>
   </div>
 
-  <!-- ============ HALAMAN GURU ============ -->
+  <!-- GURU -->
   <div id="guruPage" class="hidden">
     <div class="card">
       <div class="hdr">
@@ -193,7 +193,7 @@
     </div>
   </div>
 
-  <!-- ============ HALAMAN ADMIN ============ -->
+  <!-- ADMIN -->
   <div id="adminPage" class="hidden">
     <div class="card">
       <div class="hdr">
@@ -284,7 +284,6 @@
       <h4>🖐️ Izin Sidik Jari Harian</h4>
       <div class="small-info">
         Aktifkan izin sidik jari untuk user tertentu <strong>hari ini saja</strong>.
-        Cocok untuk kondisi khusus seperti PJJ, lomba, atau bencana.
       </div>
       <div class="row" style="margin-bottom:12px;">
         <button class="success sm" style="flex:1" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button>
@@ -389,10 +388,10 @@
 
 <script>
 /*******************************************************
- * KONFIG
+ * KONFIG — GANTI DENGAN URL DEPLOYMENT ANDA
  *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbzdRkIdCvJKFQJSUb2a2SdQW23a8Lqu53zZKURUZXx96ZqmBdFaIfUEhrWEj15HpNfN/exec';
-const LS_KEY = 'absensi_session_v5';
+const API_URL = 'https://script.google.com/macros/s/AKfycbws5G2nY_3ai4tAUZ19Oxsx_eZjs36m9n_UvYFar1XCzOUw4ll187agthJNo7G-NDUY/exec';
+const LS_KEY = 'absensi_session_v6';
 
 /*******************************************************
  * STATE
@@ -408,7 +407,7 @@ let sesiTimer = null;
 let izinFpData = [];
 
 /*******************************************************
- * POPUP
+ * POPUP (RESPONSIF)
  *******************************************************/
 function showLoading(text='Memproses...') {
   const ov = document.getElementById('popupOverlay');
@@ -422,7 +421,7 @@ function showLoading(text='Memproses...') {
   btn.classList.add('hidden');
   ov.classList.remove('hidden');
 }
-function showPopup(text, ok = true, autoCloseMs = 2000) {
+function showPopup(text, ok = true, autoCloseMs = 1200) {
   const ov = document.getElementById('popupOverlay');
   const box = document.getElementById('popupBox');
   const icon = document.getElementById('popupIcon');
@@ -504,16 +503,16 @@ async function doLogin() {
   try {
     const payload = /^\d{4}$/.test(val) ? { id:'', pin:val } : { id:val, pin:'' };
     const r = await api('login', payload);
-    if (!r.ok) { showPopup(r.msg, false, 2500); return; }
+    if (!r.ok) { showPopup(r.msg, false, 2000); return; }
     currentUser = r;
     saveSession();
     document.getElementById('loginInput').value = '';
     await muatFitur();
     await muatSesi();
-    showPopup('Login Berhasil! Selamat datang, ' + r.user.nama, true, 1800);
-    setTimeout(() => { closePopup(); routeToPage(); }, 1600);
+    showPopup('Login Berhasil! Halo ' + r.user.nama, true, 1200);
+    setTimeout(() => { closePopup(); routeToPage(); }, 1000);
   } catch(e) {
-    showPopup('Gagal koneksi: '+e.message, false, 3000);
+    showPopup('Gagal koneksi: '+e.message, false, 2500);
   }
 }
 function logout() {
@@ -524,7 +523,7 @@ function logout() {
   ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
     document.getElementById(id).classList.add('hidden'));
   document.getElementById('loginPage').classList.remove('hidden');
-  showPopup('Logout berhasil', true, 1500);
+  showPopup('Logout berhasil', true, 1200);
 }
 
 /*******************************************************
@@ -633,13 +632,11 @@ async function handleFingerprint() {
   showLoading('Memeriksa izin...');
   const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
   if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini. Hubungi admin.', false, 3000);
+    showPopup('Anda tidak diizinkan absen sidik jari hari ini. Hubungi admin.', false, 2500);
     return;
   }
   const sesi = currentSesiAktif.sesi;
-  if (!window.PublicKeyCredential) {
-    showPopup('HP/browser tidak mendukung sidik jari', false); return;
-  }
+  if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
   try {
     if (!currentUser.hasFingerprint) {
       showLoading('Mendaftarkan sidik jari...');
@@ -663,7 +660,7 @@ async function handleFingerprint() {
       currentUser.hasFingerprint = true;
       saveSession();
       updateFingerprintButton('siswa');
-      showPopup('✅ Sidik jari terdaftar. Tekan tombol lagi untuk absen.', true, 2500);
+      showPopup('✅ Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2000);
     } else {
       showLoading('Verifikasi sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -673,12 +670,15 @@ async function handleFingerprint() {
       const r = await api('absenFingerprint', {
         id: currentUser.user.id, nama: currentUser.user.nama, role: 'siswa', sesi
       });
-      if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-      showPopup(r.msg, r.ok, 2500);
+      showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
+      if (r.ok) {
+        if (navigator.vibrate) navigator.vibrate(200);
+        muatRiwayat();
+      }
     }
   } catch(e) {
-    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false);
-    else showPopup('Error: '+e.message, false, 3000);
+    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false, 2000);
+    else showPopup('Error: '+e.message, false, 2500);
   }
 }
 async function handleGuruFingerprint() {
@@ -686,13 +686,11 @@ async function handleGuruFingerprint() {
   showLoading('Memeriksa izin...');
   const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
   if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini. Hubungi admin.', false, 3000);
+    showPopup('Anda tidak diizinkan absen sidik jari hari ini.', false, 2500);
     return;
   }
   const sesi = currentSesiAktif.sesi;
-  if (!window.PublicKeyCredential) {
-    showPopup('HP/browser tidak mendukung sidik jari', false); return;
-  }
+  if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
   try {
     if (!currentUser.hasFingerprint) {
       showLoading('Mendaftarkan sidik jari...');
@@ -716,7 +714,7 @@ async function handleGuruFingerprint() {
       currentUser.hasFingerprint = true;
       saveSession();
       updateFingerprintButton('guru');
-      showPopup('✅ Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2500);
+      showPopup('✅ Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2000);
     } else {
       showLoading('Verifikasi sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -726,12 +724,15 @@ async function handleGuruFingerprint() {
       const r = await api('absenFingerprint', {
         id: currentUser.user.id, nama: currentUser.user.nama, role: 'guru', sesi
       });
-      if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-      showPopup(r.msg, r.ok, 2500);
+      showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
+      if (r.ok) {
+        if (navigator.vibrate) navigator.vibrate(200);
+        muatRiwayat();
+      }
     }
   } catch(e) {
-    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false);
-    else showPopup('Error: '+e.message, false, 3000);
+    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false, 2000);
+    else showPopup('Error: '+e.message, false, 2500);
   }
 }
 function updateFingerprintButton(who) {
@@ -790,9 +791,13 @@ async function guruProsesScan(barcode) {
       scannerRole: 'guru', scannerId: currentUser.user.id,
       barcode: String(barcode), sesi: currentSesiAktif.sesi
     });
-    if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-    showPopup(r.msg, r.ok, 2500);
-  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
+    // Notif langsung muncul, tidak menunggu refresh riwayat
+    showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
+    if (r.ok) {
+      if (navigator.vibrate) navigator.vibrate(200);
+      muatRiwayat(); // background, tidak blocking
+    }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 function guruSubmitManual() {
   const v = document.getElementById('guruManualBarcode').value.trim();
@@ -844,9 +849,12 @@ async function adminProsesScan(barcode) {
       scannerRole: 'admin', scannerId: currentUser.user.id,
       barcode: String(barcode), sesi: sesi
     });
-    if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); }
-    showPopup(r.msg, r.ok, 2500);
-  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
+    showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
+    if (r.ok) {
+      if (navigator.vibrate) navigator.vibrate(200);
+      muatRiwayat();
+    }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 function adminSubmitManual() {
   const v = document.getElementById('adminManualBarcode').value.trim();
@@ -864,7 +872,6 @@ async function muatRiwayat() {
     if (!r.ok) return;
     const sesiList = r.sesi;
     const data = r.data;
-
     const buildHead = (theadId) => {
       const thead = document.getElementById(theadId);
       if (!thead) return;
@@ -873,7 +880,6 @@ async function muatRiwayat() {
       html += '</tr>';
       thead.innerHTML = html;
     };
-
     const buildBody = (tbodyId, dataArr) => {
       const tbody = document.getElementById(tbodyId);
       if (!tbody) return;
@@ -900,7 +906,6 @@ async function muatRiwayat() {
         tbody.appendChild(tr);
       });
     };
-
     buildHead('riwayatGlobalUserHead');
     buildBody('riwayatGlobalUserBody', data);
     buildHead('riwayatGlobalGuruHead');
@@ -953,7 +958,7 @@ async function cekSyaratSaya() {
         </table>
       </div>`;
     closePopup();
-  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
 /*******************************************************
@@ -995,18 +1000,10 @@ async function adminTambahSesi() {
   if (!namaSesi || !mulaiTW || !batasTW || !batasTL) {
     showPopup('Semua field wajib diisi', false); return;
   }
-  const reTime = /^\d{2}:\d{2}$/;
-  if (!reTime.test(mulaiTW) || !reTime.test(batasTW) || !reTime.test(batasTL)) {
-    showPopup('Format waktu harus HH:mm', false); return;
-  }
   const p = { sesi: namaSesi, mulaiTW, batasTW, batasTL, tutup: batasTL };
   showLoading('Menyimpan sesi...');
   const r = await api('tambahSesi', p);
-  if (r.ok) {
-    document.getElementById('newSesiNama').value = '';
-    await muatSesi();
-    renderSesiList();
-  }
+  if (r.ok) { document.getElementById('newSesiNama').value = ''; await muatSesi(); renderSesiList(); }
   showPopup(r.msg, r.ok);
 }
 async function adminHapusSesi(sesi) {
@@ -1056,7 +1053,7 @@ async function guruSimpanIzin() {
     });
     if (r.ok) { document.getElementById('guruIzinNisn').value=''; muatRiwayat(); }
     showPopup(r.msg, r.ok);
-  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
 /*******************************************************
@@ -1070,7 +1067,7 @@ async function adminLoadIzinFp() {
     if (!r.ok) { showPopup(r.msg, false); return; }
     izinFpData = r.data || [];
     renderIzinFpList();
-  } catch(e) { showPopup('Gagal memuat: '+e.message, false, 3000); }
+  } catch(e) { showPopup('Gagal memuat: '+e.message, false, 2500); }
 }
 function renderIzinFpList() {
   const el = document.getElementById('izinFpList');
@@ -1123,18 +1120,15 @@ function renderIzinFpList() {
 async function adminToggleIzinFp(id, allowed) {
   const user = izinFpData.find(u => u.id === id);
   if (!user) return;
-
   let alasan = 'Izin khusus';
   if (allowed) {
     const input = prompt(`Beri izin sidik jari untuk ${user.nama}.\nAlasan (opsional):`, 'Kegiatan khusus');
     if (input === null) { renderIzinFpList(); return; }
     alasan = input.trim() || 'Izin khusus';
   }
-
   user.allowed = allowed;
   user.alasan = allowed ? alasan : '';
   renderIzinFpList();
-
   try {
     const r = allowed
       ? await api('setIzinFp', { id, nama: user.nama, role: user.role, alasan })
@@ -1143,14 +1137,14 @@ async function adminToggleIzinFp(id, allowed) {
       user.allowed = !allowed;
       user.alasan = '';
       renderIzinFpList();
-      showPopup(r.msg, false, 2000);
+      showPopup(r.msg, false, 1800);
       return;
     }
-    showPopup(r.msg, true, 1200);
+    showPopup(r.msg, true, 1000);
   } catch(e) {
     user.allowed = !allowed;
     renderIzinFpList();
-    showPopup('Gagal: '+e.message, false, 2500);
+    showPopup('Gagal: '+e.message, false, 2200);
   }
 }
 async function adminBulkIzinFp(allowed) {
@@ -1169,19 +1163,10 @@ async function adminBulkIzinFp(allowed) {
   );
 
   const target = allowed ? list.filter(u => !u.allowed) : list.filter(u => u.allowed);
-
-  if (!target.length) {
-    showPopup('Tidak ada user yang perlu diubah', false, 1800); return;
-  }
+  if (!target.length) { showPopup('Tidak ada user yang perlu diubah', false, 1500); return; }
 
   const aksi = allowed ? 'IZINKAN' : 'TOLAK';
-  const konfirmasi = confirm(
-    `${aksi} sidik jari untuk ${target.length} user?\n\n` +
-    `Filter aktif: ${filterRole === 'all' ? 'Semua Role' : filterRole}, ` +
-    `${filterStatus === 'all' ? 'Semua Status' : filterStatus}` +
-    (search ? `, cari "${search}"` : '')
-  );
-  if (!konfirmasi) return;
+  if (!confirm(`${aksi} sidik jari untuk ${target.length} user?`)) return;
 
   let alasan = 'Izin massal';
   if (allowed) {
@@ -1189,16 +1174,13 @@ async function adminBulkIzinFp(allowed) {
     if (input === null) return;
     alasan = input.trim() || 'Izin massal';
   }
-
   showLoading(`${allowed ? 'Memberi' : 'Mencabut'} izin ${target.length} user...`);
   try {
     const ids = target.map(u => u.id);
     const r = await api('setIzinFpBulk', { ids, allowed, alasan });
     if (r.ok) await adminLoadIzinFp();
     else showPopup(r.msg, false);
-  } catch(e) {
-    showPopup('Gagal: '+e.message, false, 3000);
-  }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
 /*******************************************************
@@ -1281,11 +1263,9 @@ async function adminGenerateStatus() {
   showLoading('Generate status otomatis...');
   try {
     const r = await api('generateOtomatis');
-    showPopup(r.msg, r.ok, 3000);
+    showPopup(r.msg, r.ok, 2500);
     if (r.ok) muatRiwayat();
-  } catch(e) {
-    showPopup('Gagal: '+e.message, false, 3000);
-  }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
 /*******************************************************
