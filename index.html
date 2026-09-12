@@ -36,30 +36,39 @@
   /* ==================================================
      TOPBAR
      ================================================== */
+    /* ==================================================
+     TOPBAR (logo + teks di tengah)
+     ================================================== */
   .topbar {
     position: fixed;
     top: 0; left: 0; right: 0;
     height: var(--topbar-h);
-    background: #FFFAFA;
+    background: #fff;
     border-bottom: 1px solid #e2e8f0;
     box-shadow: 0 1px 4px rgba(0,0,0,.04);
     display: flex;
-    align-items: text-center;
+    align-items: center;
     padding: 0 12px;
     z-index: 1000;
   }
+
+  /* Tombol toggle — kiri */
   .topbar .toggle-btn {
     background: none;
     border: none;
     font-size: 1.4rem;
-    color: #282828;
-    padding: 6px 10px;
+    color: #475569;
+    padding: 6px 8px;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+    z-index: 2;
   }
   .topbar .toggle-btn:hover { background: #f1f5f9; }
+
+  /* Blok tengah — absolute, biar selalu center */
   .topbar-center {
     position: absolute;
     left: 50%;
@@ -68,12 +77,13 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    max-width: 60%;
+    max-width: calc(100% - 120px);
     pointer-events: none;
+    z-index: 1;
   }
   .topbar-logo {
-    height: 40px;
-    width: 40px;
+    height: 34px;
+    width: 34px;
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -82,18 +92,36 @@
     line-height: 1.15;
     white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
-  .topbar-text .brand-line-1 { font-weight: 700; font-size: .70rem; color: #282828; }
-  .topbar-text .brand-line-2 { font-size: .62rem; color: #282828; }
-  .topbar-text .brand-line-3 { font-size: .60rem; color: #282828; }
+  .topbar-text .brand-line-1 {
+    font-weight: 700;
+    font-size: .85rem;
+    color: #1e293b;
+  }
+  .topbar-text .brand-line-2 {
+    font-size: .74rem;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-text .brand-line-3 {
+    font-size: .66rem;
+    color: #94a3b8;
+  }
+
+  /* User — kanan */
   .topbar-user {
     margin-left: auto;
     position: relative;
+    flex-shrink: 0;
+    z-index: 2;
   }
   .topbar-user .user-btn {
     background: none;
     border: none;
-    color: #00FFFF;
+    color: #475569;
     font-size: 1.6rem;
     padding: 4px 8px;
     display: flex;
@@ -123,7 +151,6 @@
   }
   .user-dropdown .item:hover { background: #f1f5f9; }
   .user-dropdown .divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
-
   /* ==================================================
      SIDEBAR (SOLID)
      ================================================== */
@@ -637,34 +664,38 @@
 </style>
 </head>
 <body>
+    <!-- ============ TOPBAR ============ -->
+    <header class="topbar">
+      <!-- KIRI: Toggle -->
+      <button class="toggle-btn" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+      </button>
+    
+      <!-- TENGAH: Logo + Teks -->
+      <div class="topbar-center">
+        <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
+        <div class="topbar-text">
+          <div class="brand-line-1">SMPN 8 CIPARASI</div>
+          <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
+          <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 12:30:33</div>
+        </div>
+      </div>
+    
+      <!-- KANAN: Foto Admin -->
+      <div class="topbar-user">
+        <button class="user-btn" onclick="toggleUserMenu()">
+          <i class="bi bi-person-circle"></i>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="item text-muted" id="topbarUserName" style="cursor:default;">Belum Login</div>
+          <div class="divider"></div>
+          <div class="item" onclick="showLoginPopup(); closeUserMenu();"><i class="bi bi-box-arrow-in-right me-1"></i> Login</div>
+          <div class="item" onclick="doLogout(); closeUserMenu();"><i class="bi bi-box-arrow-right me-1"></i> Logout</div>
+        </div>
+      </div>
+    </header>
 
-<!-- ============ TOPBAR ============ -->
-<!-- ============ TOPBAR ============ -->
-<header class="topbar">
-  <!-- KIRI: Toggle + Logo + Nama Sekolah -->
-  <button class="toggle-btn" onclick="toggleSidebar()">
-    <i class="bi bi-list"></i>
-  </button>
-  <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
-  <div class="topbar-center">
-    <div class="brand-line-1">SMPN 8 CIPARASI</div>
-    <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 09:48:14</div>
-    <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
-  </div>
-
-  <!-- KANAN: Foto Admin -->
-  <div class="topbar-user">
-    <button class="user-btn" onclick="toggleUserMenu()">
-      <i class="bi bi-person-circle"></i>
-    </button>
-    <div class="user-dropdown" id="userDropdown">
-      <div class="item text-muted" id="topbarUserName" style="cursor:default;">Belum Login</div>
-      <div class="divider"></div>
-      <div class="item" onclick="showLoginPopup(); closeUserMenu();"><i class="bi bi-box-arrow-in-right me-1"></i> Login</div>
-      <div class="item" onclick="doLogout(); closeUserMenu();"><i class="bi bi-box-arrow-right me-1"></i> Logout</div>
-    </div>
-  </div>
-</header>
+  
 <!-- ============ SIDEBAR OVERLAY (mobile) ============ -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
