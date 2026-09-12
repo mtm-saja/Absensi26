@@ -190,17 +190,20 @@ function startClock() {
   datetimeTimer = setInterval(update, 1000);
 }
 
-/*******************************************************
- * APPLY USER TO UI
- *******************************************************/
 function applyUserToUI() {
   const role = currentUser ? currentUser.role : null;
   const nama = currentUser ? currentUser.user.nama : 'Belum Login';
-  document.getElementById('topbarUserName').textContent = nama;
-  document.getElementById('topbarSubtitle').textContent = role
-    ? ('Dashboard ' + role.charAt(0).toUpperCase() + role.slice(1) + (currentUser.user.nama ? ' — ' + currentUser.user.nama : ''))
-    : 'Dashboard';
 
+  // Topbar username (di dropdown)
+  document.getElementById('topbarUserName').textContent = nama;
+
+  // Subtitle: kalau login → nama user saja; kalau belum → "Dashboard"
+  const subtitle = document.getElementById('topbarSubtitle');
+  if (subtitle) {
+    subtitle.textContent = currentUser ? nama : 'Dashboard';
+  }
+
+  // ===== Rest of function tetap sama =====
   const menus = ['menuFpSiswa','menuSyarat','menuQR','menuFpGuru','menuIzin','menuRekap','menuInputNilai','menuDaftarNilai','menuPengaturan'];
   menus.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('disabled'); });
 
