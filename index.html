@@ -635,11 +635,7 @@
   }
 </style>
 </head>
-<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
-<div class="app-wrapper">
-
-  <!-- ============ TOPBAR (FIXED) ============ -->
-  <body>
+<body>
 
 <!-- ============ TOPBAR ============ -->
 <header class="topbar">
@@ -787,465 +783,310 @@
 
     <div class="card" id="riwayatCard">
       <div class="card-header">
-        <h4><i class="bi bi-clock-history
-
-    <!-- ============ SIDEBAR (FIXED) ============ -->
-  <aside class="app-sidebar sidebar-solid shadow">
-    <div>
-      <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo">
-      <span class="brand-text">Absensi Online</span>
-    </div>
-    <div class="sidebar-wrapper">
-      <nav class="mt-1">
-        <ul class="nav sidebar-menu flex-column" role="menu">
-  
-          <li class="nav-header">DASHBOARD</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="showPage('dashboard', this); return false;">
-              <i class="nav-icon bi bi-speedometer2"></i><p>Dashboard</p>
-            </a>
-          </li>
-  
-          <li class="nav-header">ORANG TUA / SISWA</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" id="menuLoginSiswa" onclick="showLoginPopup('siswa'); return false;">
-              <i class="nav-icon bi bi-person-badge"></i><p>Login Siswa</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="showPage('cariSiswa', this); return false;">
-              <i class="nav-icon bi bi-search"></i><p>Cari Data Siswa</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuFpSiswa" onclick="guardMenu('siswa','sidikJariSiswa', this); return false;">
-              <i class="nav-icon bi bi-fingerprint"></i><p>Absensi Sidik Jari <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuSyarat" onclick="guardMenu('siswa','syarat', this); return false;">
-              <i class="nav-icon bi bi-mortarboard"></i><p>Cek Syarat <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-  
-          <li class="nav-header">UTAMA</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" id="menuLoginGuru" onclick="showLoginPopup(); return false;">
-              <i class="nav-icon bi bi-person-workspace"></i><p>Login Guru / Admin</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuQR" onclick="guardMenu('guru','qr', this); return false;">
-              <i class="nav-icon bi bi-qr-code-scan"></i><p>QR Barcode <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuFpGuru" onclick="guardMenu('guru','sidikJariGuru', this); return false;">
-              <i class="nav-icon bi bi-fingerprint"></i><p>Absensi Sidik Jari <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuIzin" onclick="guardMenu('guru','izin', this); return false;">
-              <i class="nav-icon bi bi-clipboard-plus"></i><p>Izin / Sakit <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuRekap" onclick="guardMenu('guru','rekap', this); return false;">
-              <i class="nav-icon bi bi-file-earmark-bar-graph"></i><p>Rekap Absensi <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuInputNilai" onclick="guardMenu('guru','inputNilai', this); return false;">
-              <i class="nav-icon bi bi-pencil-square"></i><p>Input Nilai <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuDaftarNilai" onclick="guardMenu('guru','daftarNilai', this); return false;">
-              <i class="nav-icon bi bi-table"></i><p>Daftar Nilai <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-  
-          <li class="nav-header">SEKOLAH</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="showPage('kelulusan', this); return false;">
-              <i class="nav-icon bi bi-trophy"></i><p>Kelulusan</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link disabled" id="menuPengaturan" onclick="guardMenu('admin','pengaturan', this); return false;">
-              <i class="nav-icon bi bi-gear"></i><p>Pengaturan Sistem <i class="bi bi-lock-fill ms-1 small"></i></p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link" onclick="doLogout(); return false;">
-              <i class="nav-icon bi bi-box-arrow-right"></i><p>Logout</p>
-            </a>
-          </li>
-  
-        </ul>
-      </nav>
-    </div>
-  </aside>
-  <!-- ============ MAIN CONTENT ============ -->
-  <main class="app-main">
-    <div class="app-content-header">
-      <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center">
-          <h3 class="mb-0" id="pageTitle">Dashboard</h3>
-          <ol class="breadcrumb mb-0">
-            <li class="breadcrumb-item"><a href="#">Home</a></li>
-            <li class="breadcrumb-item active" id="pageBreadcrumb">Dashboard</li>
-          </ol>
+        <h4><i class="bi bi-clock-history me-1"></i> Riwayat Kehadiran Hari Ini</h4>
+        <button class="btn btn-sm btn-secondary" onclick="muatRiwayat()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="card-body">
+        <div id="riwayatClosedMsg" class="text-center text-muted py-2 hidden">
+          <i class="bi bi-moon-stars fs-4 d-block mb-1"></i>
+          <strong>Sesi Belum Dimulai</strong><br><span class="small">Belum ada riwayat saat ini.</span>
+        </div>
+        <div class="table-wrap" id="riwayatTableWrap">
+          <table id="riwayatTable">
+            <thead id="riwayatTableHead"></thead>
+            <tbody id="riwayatTableBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
-    <div class="app-content">
-      <div class="container-fluid">
+  </div>
 
-        <!-- ===== PAGE: DASHBOARD ===== -->
-        <div id="page-dashboard" class="page-section">
-          <div id="sesiBannerContainer" class="mb-2"></div>
+  <!-- PAGE: CARI SISWA -->
+  <div id="page-cariSiswa" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-search me-1"></i> Cari Data Siswa</h4></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6"><input id="cariSiswaInput" class="form-control form-control-sm" placeholder="NISN atau Nama..." oninput="doCariSiswa()"></div>
+          <div class="col-6"><select id="cariSiswaKelas" class="form-select form-select-sm" onchange="doCariSiswa()"><option value="">Semua Kelas</option></select></div>
+          <div class="col-6"><input type="date" id="cariSiswaDari" class="form-control form-control-sm" title="Dari tanggal"></div>
+          <div class="col-6"><input type="date" id="cariSiswaSampai" class="form-control form-control-sm" title="Sampai tanggal"></div>
+        </div>
+        <div class="small text-muted mb-2">Kosongkan tanggal untuk melihat semua periode.</div>
+        <div id="cariSiswaHasil" class="table-wrap"></div>
+      </div>
+    </div>
+  </div>
 
-          <div class="card mb-2">
-            <div class="card-header py-2">
-              <h3 class="card-title mb-0"><i class="bi bi-bar-chart-line me-1"></i> Rekap Kehadiran Hari Ini</h3>
-            </div>
-            <div class="card-body py-2">
-              <div id="rekapRealtimeContainer"></div>
-            </div>
+  <!-- PAGE: SIDIK JARI SISWA -->
+  <div id="page-sidikJariSiswa" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Siswa</h4></div>
+      <div class="card-body">
+        <div id="siswaSesiBanner" class="mb-2"></div>
+        <button id="btnFingerprint" class="btn btn-success btn-full" onclick="handleFingerprint()">
+          <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
+        </button>
+        <div class="text-muted small mt-2 text-center">Gunakan sensor sidik jari HP (WebAuthn).</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: SYARAT -->
+  <div id="page-syarat" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-mortarboard me-1"></i> Cek Syarat <span id="syaratJudul">Naik Kelas</span></h4></div>
+      <div class="card-body">
+        <div class="text-muted small mb-2">Syarat minimal <strong>80%</strong> kehadiran.</div>
+        <button class="btn btn-primary btn-sm btn-full mb-2" onclick="cekSyaratSaya()"><i class="bi bi-bar-chart"></i> Cek Sekarang</button>
+        <div id="syaratHasil" style="font-size:.8rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: QR -->
+  <div id="page-qr" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-qr-code-scan me-1"></i> QR Barcode Scanner</h4></div>
+      <div class="card-body">
+        <div id="guruSesiBanner" class="mb-2"></div>
+        <div id="adminScanTargetBox" class="mb-2 hidden">
+          <label>Target Scan (Admin):</label>
+          <select id="adminScanTarget" class="form-select form-select-sm">
+            <option value="siswa">🎒 Barcode Siswa (NISN)</option>
+            <option value="guru">👨‍🏫 Barcode Guru (NIP)</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <select id="qrModeScan" class="form-select form-select-sm" onchange="onQRModeChange()">
+            <option value="kamera">📷 Kamera HP</option>
+            <option value="manual">⌨️ Input Manual</option>
+          </select>
+        </div>
+        <div id="qrManualBox" class="hidden">
+          <input id="qrManualBarcode" class="form-control form-control-sm" placeholder="Ketik NISN/NIP lalu Enter" inputmode="numeric">
+          <button class="btn btn-success btn-sm btn-full" onclick="qrSubmitManual()">Proses</button>
+        </div>
+        <div id="qrKameraBox">
+          <div id="guruReader"></div>
+          <div class="row mt-2">
+            <div class="col-6"><button id="qrBtnBuka" class="btn btn-success btn-sm btn-full" onclick="qrBukaKamera()"><i class="bi bi-play-fill"></i> Buka</button></div>
+            <div class="col-6"><button class="btn btn-danger btn-sm btn-full" onclick="qrTutupKamera()"><i class="bi bi-stop-fill"></i> Tutup</button></div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <div class="card" id="riwayatCard">
-            <div class="card-header py-2 d-flex justify-content-between align-items-center">
-              <h3 class="card-title mb-0"><i class="bi bi-clock-history me-1"></i> Riwayat Kehadiran Hari Ini</h3>
-              <button class="btn btn-sm btn-outline-primary py-0 px-2" onclick="muatRiwayat()"><i class="bi bi-arrow-clockwise"></i></button>
-            </div>
-            <div class="card-body py-2">
-              <div id="riwayatClosedMsg" class="text-center text-muted small py-3 hidden">
-                <i class="bi bi-moon-stars fs-4 d-block mb-1"></i>
-                <strong>Sesi Belum Dimulai</strong><br>Belum ada riwayat saat ini.
-              </div>
-              <div class="table-wrap" id="riwayatTableWrap">
-                <table class="table table-sm table-striped" id="riwayatTable">
-                  <thead id="riwayatTableHead"></thead>
-                  <tbody id="riwayatTableBody"></tbody>
-                </table>
-              </div>
-            </div>
+  <!-- PAGE: SIDIK JARI GURU -->
+  <div id="page-sidikJariGuru" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Guru</h4></div>
+      <div class="card-body">
+        <div id="guruFpSesiBanner" class="mb-2"></div>
+        <button id="guruBtnFingerprint" class="btn btn-success btn-full" onclick="handleGuruFingerprint()">
+          <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: IZIN -->
+  <div id="page-izin" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-clipboard-plus me-1"></i> Input Izin / Sakit</h4></div>
+      <div class="card-body">
+        <label>Peran</label>
+        <select id="izinRole" class="form-select form-select-sm">
+          <option value="siswa">Siswa</option>
+          <option value="guru" id="izinRoleGuruOpt">Guru</option>
+        </select>
+        <label>ID (NISN/NIP)</label>
+        <input id="izinId" class="form-control form-control-sm" inputmode="numeric">
+        <label>Nama</label>
+        <input id="izinNama" class="form-control form-control-sm">
+        <label>Sesi</label>
+        <select id="izinSesiSelect" class="form-select form-select-sm"></select>
+        <label>Keterangan</label>
+        <select id="izinKet" class="form-select form-select-sm">
+          <option value="IZIN">IZIN</option>
+          <option value="SAKIT">SAKIT</option>
+        </select>
+        <button class="btn btn-success btn-sm btn-full" onclick="simpanIzin()"><i class="bi bi-save"></i> Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: REKAP -->
+  <div id="page-rekap" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-file-earmark-bar-graph me-1"></i> Rekap Absensi</h4></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6"><input type="date" id="rekapDari" class="form-control form-control-sm"></div>
+          <div class="col-6"><input type="date" id="rekapSampai" class="form-control form-control-sm"></div>
+          <div class="col-6">
+            <select id="rekapRole" class="form-select form-select-sm">
+              <option value="siswa">Siswa</option>
+              <option value="guru" id="rekapRoleGuruOpt">Guru</option>
+            </select>
+          </div>
+          <div class="col-6"><button class="btn btn-primary btn-sm btn-full" onclick="muatRekapPeriode()"><i class="bi bi-search"></i> Tampilkan</button></div>
+        </div>
+        <div id="rekapPeriodeHasil" class="table-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: INPUT NILAI -->
+  <div id="page-inputNilai" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-pencil-square me-1"></i> Input Nilai</h4></div>
+      <div class="card-body">
+        <input id="inputJenisNilai" class="form-control form-control-sm" placeholder="Jenis nilai (NH1, UTS, dll)">
+        <div class="row">
+          <div class="col-6"><select id="inputMapel" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
+          <div class="col-6"><select id="inputKelas" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
+        </div>
+        <div id="inputNilaiBody"></div>
+        <button class="btn btn-success btn-sm btn-full mt-2" onclick="simpanNilaiMassal()"><i class="bi bi-save"></i> Simpan Semua Nilai</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: DAFTAR NILAI -->
+  <div id="page-daftarNilai" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-table me-1"></i> Daftar Nilai</h4></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6"><select id="daftarMapel" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
+          <div class="col-6"><select id="daftarKelas" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
+        </div>
+        <div id="daftarNilaiHasil" class="table-wrap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: KELULUSAN -->
+  <div id="page-kelulusan" class="page-section hidden">
+    <div class="card">
+      <div class="card-header"><h4><i class="bi bi-trophy me-1"></i> Cek Kelulusan</h4></div>
+      <div class="card-body">
+        <input id="kelulusanNisn" class="form-control form-control-sm" placeholder="NISN 8-10 digit" inputmode="numeric">
+        <button class="btn btn-primary btn-sm btn-full mb-2" onclick="cekKelulusan()"><i class="bi bi-search"></i> Cek Kelulusan</button>
+        <div id="kelulusanHasil" style="font-size:.82rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: PENGATURAN -->
+  <div id="page-pengaturan" class="page-section hidden">
+    <div class="card">
+      <div class="card-body">
+
+        <div class="accordion-header" onclick="toggleAccordion('acc-sesi')">
+          <span>⏰ Pengaturan Sesi</span><i class="bi bi-chevron-right chev"></i>
+        </div>
+        <div id="acc-sesi" class="accordion-body">
+          <div id="sesiList"></div>
+          <hr>
+          <h6 class="small fw-bold">Tambah Sesi</h6>
+          <div class="row">
+            <div class="col-6"><input id="newSesiNama" class="form-control form-control-sm" placeholder="Sesi 4"></div>
+            <div class="col-6"><input id="newSesiMulaiTW" type="time" class="form-control form-control-sm" value="16:00"></div>
+            <div class="col-6"><input id="newSesiBatasTW" type="time" class="form-control form-control-sm" value="16:30"></div>
+            <div class="col-6"><input id="newSesiBatasTL" type="time" class="form-control form-control-sm" value="17:00"></div>
+            <div class="col-12"><button class="btn btn-success btn-sm btn-full" onclick="adminTambahSesi()">➕ Tambah</button></div>
           </div>
         </div>
 
-        <!-- ===== PAGE: CARI SISWA ===== -->
-        <div id="page-cariSiswa" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-search me-1"></i> Cari Data Siswa</h3></div>
-            <div class="card-body">
-              <div class="row g-2 mb-2">
-                <div class="col-md-5">
-                  <input id="cariSiswaInput" class="form-control form-control-sm" placeholder="NISN atau Nama..." oninput="doCariSiswa()">
-                </div>
-                <div class="col-md-3">
-                  <select id="cariSiswaKelas" class="form-select form-select-sm" onchange="doCariSiswa()">
-                    <option value="">Semua Kelas</option>
-                  </select>
-                </div>
-                <div class="col-md-2">
-                  <input type="date" id="cariSiswaDari" class="form-control form-control-sm" title="Dari tanggal">
-                </div>
-                <div class="col-md-2">
-                  <input type="date" id="cariSiswaSampai" class="form-control form-control-sm" title="Sampai tanggal">
-                </div>
-              </div>
-              <div class="small text-muted mb-2">
-                Kosongkan tanggal untuk melihat semua periode. Klik baris untuk melihat akumulasi kehadiran.
-              </div>
-              <div id="cariSiswaHasil"></div>
-            </div>
+        <div class="accordion-header" onclick="toggleAccordion('acc-libur')">
+          <span>🏖️ Hari Libur</span><i class="bi bi-chevron-right chev"></i>
+        </div>
+        <div id="acc-libur" class="accordion-body">
+          <div class="row">
+            <div class="col-6"><input id="liburTanggal" type="date" class="form-control form-control-sm"></div>
+            <div class="col-6"><input id="liburKet" class="form-control form-control-sm" placeholder="Keterangan"></div>
+            <div class="col-12"><button class="btn btn-success btn-sm btn-full" onclick="adminSimpanLibur()">➕ Simpan</button></div>
+          </div>
+          <div id="liburList" class="mt-2"></div>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion('acc-izinfp')">
+          <span>🖐️ Izin Sidik Jari Harian</span><i class="bi bi-chevron-right chev"></i>
+        </div>
+        <div id="acc-izinfp" class="accordion-body">
+          <div class="small text-muted mb-2">Berlaku <strong>hari ini saja</strong>.</div>
+          <div class="row">
+            <div class="col-6"><button class="btn btn-success btn-sm btn-full" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button></div>
+            <div class="col-6"><button class="btn btn-danger btn-sm btn-full" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button></div>
+          </div>
+          <div class="row">
+            <div class="col-4"><select id="izinFpFilterRole" class="form-select form-select-sm" onchange="renderIzinFpList()"><option value="all">Semua</option><option value="siswa">Siswa</option><option value="guru">Guru</option></select></div>
+            <div class="col-4"><select id="izinFpFilterStatus" class="form-select form-select-sm" onchange="renderIzinFpList()"><option value="all">Status</option><option value="allowed">Diizinkan</option><option value="denied">Ditolak</option></select></div>
+            <div class="col-4"><input id="izinFpSearch" class="form-control form-control-sm" placeholder="🔍 Cari" oninput="renderIzinFpList()"></div>
+          </div>
+          <div class="small text-muted mb-1">Total: <strong id="izinFpCount">0</strong> • ✅ <span id="izinFpCountOn">0</span> diizinkan</div>
+          <div id="izinFpList" style="max-height:50vh;overflow:auto;"></div>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion('acc-user')">
+          <span>👤 User & Sidik Jari</span><i class="bi bi-chevron-right chev"></i>
+        </div>
+        <div id="acc-user" class="accordion-body">
+          <h6 class="small fw-bold">Reset PIN Guru/Admin</h6>
+          <div id="userList" class="mb-2"></div>
+          <h6 class="small fw-bold">Reset Sidik Jari</h6>
+          <div id="fpList"></div>
+          <button class="btn btn-secondary btn-sm mt-2" onclick="adminLoadFp()">🔄 Refresh</button>
+        </div>
+
+        <div class="accordion-header" onclick="toggleAccordion('acc-fitur')">
+          <span>⚙️ Fitur & Periode</span><i class="bi bi-chevron-right chev"></i>
+        </div>
+        <div id="acc-fitur" class="accordion-body">
+          <div class="switch-row">
+            <div><div class="label">Input Izin/Sakit Siswa</div><div class="desc">Izinkan siswa</div></div>
+            <label class="switch"><input type="checkbox" id="fitIzinSiswa" onchange="adminSetFitur()"><span class="slider"></span></label>
+          </div>
+          <div class="switch-row">
+            <div><div class="label">Input Izin/Sakit Guru</div><div class="desc">Izinkan guru</div></div>
+            <label class="switch"><input type="checkbox" id="fitIzinGuru" onchange="adminSetFitur()"><span class="slider"></span></label>
+          </div>
+          <hr>
+          <h6 class="small fw-bold">🎓 Periode Syarat Kelas</h6>
+          <div class="row">
+            <div class="col-6"><label>Mulai</label><input type="date" id="fitTglMulai" class="form-control form-control-sm" onchange="adminSetFitur()"></div>
+            <div class="col-6"><label>Akhir (opsional)</label><input type="date" id="fitTglAkhir" class="form-control form-control-sm" onchange="adminSetFitur()"></div>
           </div>
         </div>
 
-        <!-- ===== PAGE: SIDIK JARI SISWA ===== -->
-        <div id="page-sidikJariSiswa" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Siswa</h3></div>
-            <div class="card-body">
-              <div id="siswaSesiBanner" class="mb-2"></div>
-              <button id="btnFingerprint" class="btn btn-success w-100" onclick="handleFingerprint()">
-                <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
-              </button>
-              <div class="text-muted small mt-2 text-center">Gunakan sensor sidik jari HP (WebAuthn) untuk absen.</div>
-            </div>
-          </div>
+        <div class="accordion-header" onclick="toggleAccordion('acc-historis')">
+          <span>📜 Historis & Arsip</span><i class="bi bi-chevron-right chev"></i>
         </div>
-
-        <!-- ===== PAGE: SYARAT ===== -->
-        <div id="page-syarat" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-mortarboard me-1"></i> Cek Syarat <span id="syaratJudul">Naik Kelas</span></h3></div>
-            <div class="card-body py-2">
-              <div class="text-muted small mb-2">Syarat minimal <strong>80%</strong> kehadiran.</div>
-              <button class="btn btn-primary btn-sm w-100 mb-2" onclick="cekSyaratSaya()"><i class="bi bi-bar-chart"></i> Cek Sekarang</button>
-              <div id="syaratHasil" style="font-size:.8rem;"></div>
-            </div>
+        <div id="acc-historis" class="accordion-body">
+          <div class="small text-muted mb-2">Arsip = pindahkan data lama ke sheet Historis, sisakan data hari ini.</div>
+          <div class="row">
+            <div class="col-6"><button class="btn btn-primary btn-sm btn-full" onclick="adminArsipManual()">📦 Arsip Manual</button></div>
+            <div class="col-6"><button class="btn btn-success btn-sm btn-full" onclick="adminPasangTrigger()">⏰ Pasang Trigger</button></div>
           </div>
-        </div>
-
-        <!-- ===== PAGE: QR ===== -->
-        <div id="page-qr" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-qr-code-scan me-1"></i> QR Barcode Scanner</h3></div>
-            <div class="card-body">
-              <div id="guruSesiBanner" class="mb-2"></div>
-              <div id="adminScanTargetBox" class="mb-2 hidden">
-                <label class="form-label small fw-bold mb-1">Target Scan (Admin):</label>
-                <select id="adminScanTarget" class="form-select form-select-sm">
-                  <option value="siswa">🎒 Barcode Siswa (NISN)</option>
-                  <option value="guru">👨‍🏫 Barcode Guru (NIP)</option>
-                </select>
-              </div>
-              <div class="mb-2">
-                <select id="qrModeScan" class="form-select form-select-sm" onchange="onQRModeChange()">
-                  <option value="kamera">📷 Kamera HP</option>
-                  <option value="manual">⌨️ Input Manual</option>
-                </select>
-              </div>
-              <div id="qrManualBox" class="hidden">
-                <input id="qrManualBarcode" class="form-control form-control-sm mb-2" placeholder="Ketik NISN/NIP lalu Enter" inputmode="numeric">
-                <button class="btn btn-success btn-sm w-100" onclick="qrSubmitManual()">Proses</button>
-              </div>
-              <div id="qrKameraBox">
-                <div id="guruReader"></div>
-                <div class="row g-2 mt-2">
-                  <div class="col-6"><button id="qrBtnBuka" class="btn btn-success btn-sm w-100" onclick="qrBukaKamera()"><i class="bi bi-play-fill"></i> Buka</button></div>
-                  <div class="col-6"><button class="btn btn-danger btn-sm w-100" onclick="qrTutupKamera()"><i class="bi bi-stop-fill"></i> Tutup</button></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: SIDIK JARI GURU ===== -->
-        <div id="page-sidikJariGuru" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Guru</h3></div>
-            <div class="card-body">
-              <div id="guruFpSesiBanner" class="mb-2"></div>
-              <button id="guruBtnFingerprint" class="btn btn-success w-100" onclick="handleGuruFingerprint()">
-                <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
-              </button>
-              <div class="text-muted small mt-2 text-center">Untuk absen guru (via sidik jari HP).</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: IZIN ===== -->
-        <div id="page-izin" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-clipboard-plus me-1"></i> Input Izin / Sakit</h3></div>
-            <div class="card-body">
-              <div id="izinRoleBox" class="mb-2">
-                <label class="form-label small">Peran</label>
-                <select id="izinRole" class="form-select form-select-sm">
-                  <option value="siswa">Siswa</option>
-                  <option value="guru" id="izinRoleGuruOpt">Guru</option>
-                </select>
-              </div>
-              <div class="mb-2"><input id="izinId" class="form-control form-control-sm" placeholder="NISN / NIP" inputmode="numeric"></div>
-              <div class="mb-2"><input id="izinNama" class="form-control form-control-sm" placeholder="Nama"></div>
-              <div class="mb-2"><select id="izinSesiSelect" class="form-select form-select-sm"></select></div>
-              <div class="mb-2">
-                <select id="izinKet" class="form-select form-select-sm">
-                  <option value="IZIN">IZIN</option>
-                  <option value="SAKIT">SAKIT</option>
-                </select>
-              </div>
-              <button class="btn btn-success btn-sm w-100" onclick="simpanIzin()"><i class="bi bi-save"></i> Simpan</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: REKAP PERIODE ===== -->
-        <div id="page-rekap" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-file-earmark-bar-graph me-1"></i> Rekap Absensi</h3></div>
-            <div class="card-body">
-              <div class="row g-2 mb-2">
-                <div class="col-6 col-md-3"><input type="date" id="rekapDari" class="form-control form-control-sm"></div>
-                <div class="col-6 col-md-3"><input type="date" id="rekapSampai" class="form-control form-control-sm"></div>
-                <div class="col-6 col-md-3">
-                  <select id="rekapRole" class="form-select form-select-sm">
-                    <option value="siswa">Siswa</option>
-                    <option value="guru" id="rekapRoleGuruOpt">Guru</option>
-                  </select>
-                </div>
-                <div class="col-6 col-md-3"><button class="btn btn-primary btn-sm w-100" onclick="muatRekapPeriode()"><i class="bi bi-search"></i> Tampilkan</button></div>
-              </div>
-              <div id="rekapPeriodeHasil" class="table-wrap"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: INPUT NILAI ===== -->
-        <div id="page-inputNilai" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-pencil-square me-1"></i> Input Nilai</h3></div>
-            <div class="card-body">
-              <div class="mb-2"><input id="inputJenisNilai" class="form-control form-control-sm" placeholder="Jenis nilai (NH1, UTS, dll)"></div>
-              <div class="row g-2 mb-2">
-                <div class="col-6"><select id="inputMapel" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
-                <div class="col-6"><select id="inputKelas" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
-              </div>
-              <div id="inputNilaiBody"></div>
-              <button class="btn btn-success btn-sm w-100 mt-2" onclick="simpanNilaiMassal()"><i class="bi bi-save"></i> Simpan Semua Nilai</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: DAFTAR NILAI ===== -->
-        <div id="page-daftarNilai" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-table me-1"></i> Daftar Nilai</h3></div>
-            <div class="card-body">
-              <div class="row g-2 mb-2">
-                <div class="col-6"><select id="daftarMapel" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
-                <div class="col-6"><select id="daftarKelas" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
-              </div>
-              <div id="daftarNilaiHasil" class="table-wrap"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: KELULUSAN ===== -->
-        <div id="page-kelulusan" class="page-section hidden">
-          <div class="card">
-            <div class="card-header py-2"><h3 class="card-title mb-0"><i class="bi bi-trophy me-1"></i> Cek Kelulusan</h3></div>
-            <div class="card-body">
-              <div class="mb-2"><input id="kelulusanNisn" class="form-control form-control-sm" placeholder="NISN 8-10 digit" inputmode="numeric"></div>
-              <button class="btn btn-primary btn-sm w-100 mb-2" onclick="cekKelulusan()"><i class="bi bi-search"></i> Cek Kelulusan</button>
-              <div id="kelulusanHasil" style="font-size:.82rem;"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ===== PAGE: PENGATURAN (ADMIN) ===== -->
-        <div id="page-pengaturan" class="page-section hidden">
-          <div class="card">
-            <div class="card-body">
-
-              <!-- Accordion Sesi -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-sesi')">
-                <span>⏰ Pengaturan Sesi</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-sesi" class="accordion-body">
-                <div id="sesiList"></div>
-                <hr>
-                <h6 class="small fw-bold">Tambah Sesi</h6>
-                <div class="row g-2">
-                  <div class="col-6 col-md-3"><input id="newSesiNama" class="form-control form-control-sm" placeholder="Sesi 4"></div>
-                  <div class="col-6 col-md-2"><input id="newSesiMulaiTW" type="time" class="form-control form-control-sm" value="16:00"></div>
-                  <div class="col-6 col-md-2"><input id="newSesiBatasTW" type="time" class="form-control form-control-sm" value="16:30"></div>
-                  <div class="col-6 col-md-2"><input id="newSesiBatasTL" type="time" class="form-control form-control-sm" value="17:00"></div>
-                  <div class="col-12 col-md-3"><button class="btn btn-success btn-sm w-100" onclick="adminTambahSesi()">➕ Tambah</button></div>
-                </div>
-              </div>
-
-              <!-- Accordion Libur -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-libur')">
-                <span>🏖️ Hari Libur</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-libur" class="accordion-body">
-                <div class="row g-2 mb-2">
-                  <div class="col-6 col-md-4"><input id="liburTanggal" type="date" class="form-control form-control-sm"></div>
-                  <div class="col-6 col-md-4"><input id="liburKet" class="form-control form-control-sm" placeholder="Keterangan"></div>
-                  <div class="col-12 col-md-4"><button class="btn btn-success btn-sm w-100" onclick="adminSimpanLibur()">➕ Simpan</button></div>
-                </div>
-                <div id="liburList"></div>
-              </div>
-
-              <!-- Accordion Izin FP -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-izinfp')">
-                <span>🖐️ Izin Sidik Jari Harian</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-izinfp" class="accordion-body">
-                <div class="small text-muted mb-2">Aktifkan izin sidik jari untuk user tertentu <strong>hari ini saja</strong>.</div>
-                <div class="row g-2 mb-2">
-                  <div class="col-6"><button class="btn btn-success btn-sm w-100" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button></div>
-                  <div class="col-6"><button class="btn btn-danger btn-sm w-100" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button></div>
-                </div>
-                <div class="row g-2 mb-2">
-                  <div class="col-4"><select id="izinFpFilterRole" class="form-select form-select-sm" onchange="renderIzinFpList()"><option value="all">Semua</option><option value="siswa">Siswa</option><option value="guru">Guru</option></select></div>
-                  <div class="col-4"><select id="izinFpFilterStatus" class="form-select form-select-sm" onchange="renderIzinFpList()"><option value="all">Status</option><option value="allowed">Diizinkan</option><option value="denied">Ditolak</option></select></div>
-                  <div class="col-4"><input id="izinFpSearch" class="form-control form-control-sm" placeholder="🔍 Cari" oninput="renderIzinFpList()"></div>
-                </div>
-                <div class="small text-muted mb-1">Total: <strong id="izinFpCount">0</strong> • ✅ <span id="izinFpCountOn">0</span> diizinkan</div>
-                <div id="izinFpList" style="max-height:50vh;overflow:auto;"></div>
-              </div>
-
-              <!-- Accordion User -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-user')">
-                <span>👤 User & Sidik Jari</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-user" class="accordion-body">
-                <h6 class="small fw-bold">Reset PIN Guru/Admin</h6>
-                <div id="userList" class="mb-2"></div>
-                <h6 class="small fw-bold">Reset Sidik Jari</h6>
-                <div id="fpList"></div>
-                <button class="btn btn-secondary btn-sm mt-2" onclick="adminLoadFp()">🔄 Refresh</button>
-              </div>
-
-              <!-- Accordion Fitur -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-fitur')">
-                <span>⚙️ Fitur & Periode</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-fitur" class="accordion-body">
-                <div class="switch-row">
-                  <div><div class="label">Input Izin/Sakit Siswa</div><div class="desc">Izinkan input izin/sakit untuk siswa</div></div>
-                  <label class="switch"><input type="checkbox" id="fitIzinSiswa" onchange="adminSetFitur()"><span class="slider"></span></label>
-                </div>
-                <div class="switch-row">
-                  <div><div class="label">Input Izin/Sakit Guru</div><div class="desc">Izinkan input izin/sakit untuk guru</div></div>
-                  <label class="switch"><input type="checkbox" id="fitIzinGuru" onchange="adminSetFitur()"><span class="slider"></span></label>
-                </div>
-                <hr>
-                <h6 class="small fw-bold">🎓 Periode Perhitungan Syarat</h6>
-                <div class="row g-2">
-                  <div class="col-6"><label class="form-label small mb-1">Mulai</label><input type="date" id="fitTglMulai" class="form-control form-control-sm" onchange="adminSetFitur()"></div>
-                  <div class="col-6"><label class="form-label small mb-1">Akhir (opsional)</label><input type="date" id="fitTglAkhir" class="form-control form-control-sm" onchange="adminSetFitur()"></div>
-                </div>
-              </div>
-
-              <!-- Accordion Historis -->
-              <div class="accordion-header" onclick="toggleAccordion('acc-historis')">
-                <span>📜 Historis & Arsip</span><i class="bi bi-chevron-right chev"></i>
-              </div>
-              <div id="acc-historis" class="accordion-body">
-                <div class="small text-muted mb-2">
-                  Arsip = memindahkan data kehadiran lama ke sheet historis (menyisakan data hari ini).
-                  Data arsip tetap bisa dicari di semua fitur pencarian.
-                </div>
-                <div class="row g-2 mb-2">
-                  <div class="col-6"><button class="btn btn-primary btn-sm w-100" onclick="adminArsipManual()">📦 Arsip Manual</button></div>
-                  <div class="col-6"><button class="btn btn-success btn-sm w-100" onclick="adminPasangTrigger()">⏰ Pasang Trigger Otomatis</button></div>
-                </div>
-                <div class="small text-muted mb-2" id="infoArsip">Trigger: belum dipasang.</div>
-                <h6 class="small fw-bold">📜 Log Aktivitas Terbaru</h6>
-                <button class="btn btn-secondary btn-sm mb-2" onclick="muatHistoris()">🔄 Muat Historis</button>
-                <div id="historisHasil" class="table-wrap" style="max-height:40vh;"></div>
-              </div>
-
-            </div>
-          </div>
+          <div class="small text-muted mb-2 mt-2" id="infoArsip">Trigger: belum dipasang.</div>
+          <h6 class="small fw-bold">📜 Log Aktivitas Terbaru</h6>
+          <button class="btn btn-secondary btn-sm mb-2" onclick="muatHistoris()">🔄 Muat Historis</button>
+          <div id="historisHasil" class="table-wrap" style="max-height:40vh;"></div>
         </div>
 
       </div>
     </div>
-  </main>
+  </div>
 
-  <!-- ============ FOOTER (FIXED) ============ -->
-  <footer class="app-footer">
-    <strong>@SMP NEGERI 8 SOBANG 2026</strong>
-  </footer>
-</div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <strong>@SMP NEGERI 8 SOBANG 2026</strong>
+</footer>
 
 <!-- ============ LOGIN MODAL ============ -->
 <div id="loginModalOverlay" class="popup-overlay hidden">
@@ -1255,10 +1096,10 @@
       <h5 class="mt-2 mb-1">Login</h5>
       <div class="small text-muted" id="loginModalSubtitle">Masukkan NISN Siswa atau PIN Guru/Admin</div>
     </div>
-    <input id="loginInput" class="form-control form-control-lg text-center mb-2" placeholder="NISN / PIN" inputmode="numeric" autocomplete="off" maxlength="18">
-    <div class="small text-muted text-center mb-3">🔹 Siswa: NISN (8–10 digit) | 🔹 Guru/Admin: PIN (4 digit)</div>
-    <button class="btn btn-primary btn-lg w-100" onclick="doLogin()">Masuk</button>
-    <button class="btn btn-outline-secondary w-100 mt-2" onclick="closeLoginPopup()">Batal</button>
+    <input id="loginInput" class="form-control text-center mb-2" style="font-size:1.1rem;padding:10px;" placeholder="NISN / PIN" inputmode="numeric" autocomplete="off" maxlength="18">
+    <div class="small text-muted text-center mb-3">🔹 Siswa: NISN 8–10 digit | 🔹 Guru/Admin: PIN 4 digit</div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">Masuk</button>
+    <button class="btn btn-secondary btn-full mt-2" onclick="closeLoginPopup()">Batal</button>
   </div>
 </div>
 
@@ -1271,10 +1112,10 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/js/adminlte.min.js"></script>
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
+
+ 
