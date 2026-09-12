@@ -153,6 +153,151 @@
     .navbar-brand-center .brand-line-1 { font-size: .78rem; }
     .navbar-brand-center .brand-line-2 { font-size: .66rem; }
   }
+    /* ============================================
+     FIX TOPBAR - Logo sejajar
+     ============================================ */
+  .app-header .container-fluid {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 12px;
+    position: relative;
+  }
+  .app-header .navbar-nav {
+    flex-direction: row;
+    align-items: center;
+  }
+  .app-header .navbar-nav .nav-link {
+    padding: 6px 8px;
+    line-height: 1;
+  }
+
+  /* Center block: logo + teks */
+  .topbar-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 60%;
+  }
+  .topbar-logo {
+    height: 34px;
+    width: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .topbar-text {
+    text-align: left;
+    line-height: 1.15;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .topbar-text .brand-line-1 {
+    font-weight: 700;
+    font-size: .82rem;
+    color: #1e293b;
+  }
+  .topbar-text .brand-line-2 {
+    font-size: .7rem;
+    color: #64748b;
+  }
+  .topbar-text .brand-line-3 {
+    font-size: .65rem;
+    color: #94a3b8;
+  }
+
+  /* ============================================
+     FIX SIDEBAR - Solid, tidak transparan
+     ============================================ */
+  .app-sidebar.sidebar-solid {
+    background: #1e293b !important;
+    background-color: #1e293b !important;
+    color: #cbd5e1;
+    border-right: 1px solid #0f172a;
+  }
+  .app-sidebar.sidebar-solid .sidebar-brand {
+    background: #0f172a;
+    border-bottom: 1px solid #334155;
+  }
+  .app-sidebar.sidebar-solid .sidebar-brand .brand-text {
+    color: #fff;
+  }
+  .app-sidebar.sidebar-solid .sidebar-wrapper {
+    background: #1e293b;
+    overflow-y: auto;
+    height: calc(100vh - 56px - 45px); /* header + brand */
+  }
+
+  /* Menu link di sidebar solid */
+  .app-sidebar.sidebar-solid .nav-link {
+    color: #cbd5e1 !important;
+    background: transparent;
+    border-radius: 6px;
+    margin: 1px 4px;
+    padding: 6px 10px;
+    font-size: .82rem;
+    display: flex;
+    align-items: center;
+  }
+  .app-sidebar.sidebar-solid .nav-link:hover {
+    background: #334155 !important;
+    color: #fff !important;
+  }
+  .app-sidebar.sidebar-solid .nav-link.active {
+    background: #0ea5e9 !important;
+    color: #fff !important;
+  }
+  .app-sidebar.sidebar-solid .nav-link.disabled {
+    opacity: .4;
+    cursor: not-allowed;
+  }
+  .app-sidebar.sidebar-solid .nav-link.disabled:hover {
+    background: transparent !important;
+    color: #cbd5e1 !important;
+  }
+  .app-sidebar.sidebar-solid .nav-icon {
+    font-size: .95rem;
+    margin-right: 8px;
+    color: inherit;
+  }
+  .app-sidebar.sidebar-solid .nav-link p {
+    margin: 0;
+    font-weight: 500;
+  }
+  .app-sidebar.sidebar-solid .nav-header {
+    color: #64748b;
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 8px 12px 2px;
+    text-transform: uppercase;
+  }
+
+  /* Mobile: pastikan sidebar solid juga */
+  @media (max-width: 992px) {
+    .app-sidebar.sidebar-solid {
+      background: #1e293b !important;
+    }
+    .app-sidebar.sidebar-solid .sidebar-wrapper {
+      background: #1e293b !important;
+    }
+    .topbar-center { max-width: 55%; }
+    .topbar-text .brand-line-1 { font-size: .72rem; }
+    .topbar-text .brand-line-2 { font-size: .62rem; }
+    .topbar-text .brand-line-3 { font-size: .58rem; }
+    .topbar-logo { height: 28px; width: 28px; }
+  }
+
+  /* Body override AdminLTE jika perlu */
+  body.sidebar-mini .app-sidebar.sidebar-solid,
+  body.sidebar-collapse .app-sidebar.sidebar-solid {
+    background: #1e293b !important;
+  }
+  
 </style>
 </head>
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
@@ -160,23 +305,32 @@
 
   <!-- ============ TOPBAR (FIXED) ============ -->
   <nav class="app-header navbar navbar-expand bg-white shadow-sm">
-    <div class="container-fluid">
-      <ul class="navbar-nav">
+    <div class="container-fluid d-flex align-items-center">
+  
+      <!-- Kiri: Tombol sidebar -->
+      <ul class="navbar-nav flex-row align-items-center">
         <li class="nav-item">
           <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
             <i class="bi bi-list fs-5"></i>
           </a>
         </li>
       </ul>
-      <div class="navbar-brand-center">
-        <div class="brand-line-1"><i class="bi bi-mortarboard-fill" style="color:var(--brand);"></i> SMPN 8 CIPARASI</div>
-        <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
-        <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 07:30:33</div>
+  
+      <!-- Tengah: Logo + Nama Sekolah -->
+      <div class="topbar-center">
+        <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
+        <div class="topbar-text">
+          <div class="brand-line-1">SMPN 8 CIPARASI</div>
+          <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
+          <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 09:48:14</div>
+        </div>
       </div>
-      <ul class="navbar-nav ms-auto">
+  
+      <!-- Kanan: Foto admin -->
+      <ul class="navbar-nav flex-row align-items-center ms-auto">
         <li class="nav-item dropdown">
           <a class="nav-link" href="#" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle fs-5 text-secondary"></i>
+            <i class="bi bi-person-circle fs-4 text-secondary"></i>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><span class="dropdown-item-text small" id="topbarUserName">Belum Login</span></li>
@@ -186,26 +340,27 @@
           </ul>
         </li>
       </ul>
+  
     </div>
   </nav>
 
-  <!-- ============ SIDEBAR (FIXED) ============ -->
-  <aside class="app-sidebar shadow" data-bs-theme="dark">
+    <!-- ============ SIDEBAR (FIXED) ============ -->
+  <aside class="app-sidebar sidebar-solid shadow">
     <div class="sidebar-brand">
       <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo">
       <span class="brand-text">Absensi Online</span>
     </div>
     <div class="sidebar-wrapper">
       <nav class="mt-1">
-        <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
-
+        <ul class="nav sidebar-menu flex-column" role="menu">
+  
           <li class="nav-header">DASHBOARD</li>
           <li class="nav-item">
             <a href="#" class="nav-link active" onclick="showPage('dashboard', this); return false;">
               <i class="nav-icon bi bi-speedometer2"></i><p>Dashboard</p>
             </a>
           </li>
-
+  
           <li class="nav-header">ORANG TUA / SISWA</li>
           <li class="nav-item">
             <a href="#" class="nav-link" id="menuLoginSiswa" onclick="showLoginPopup('siswa'); return false;">
@@ -227,7 +382,7 @@
               <i class="nav-icon bi bi-mortarboard"></i><p>Cek Syarat <i class="bi bi-lock-fill ms-1 small"></i></p>
             </a>
           </li>
-
+  
           <li class="nav-header">UTAMA</li>
           <li class="nav-item">
             <a href="#" class="nav-link" id="menuLoginGuru" onclick="showLoginPopup(); return false;">
@@ -264,7 +419,7 @@
               <i class="nav-icon bi bi-table"></i><p>Daftar Nilai <i class="bi bi-lock-fill ms-1 small"></i></p>
             </a>
           </li>
-
+  
           <li class="nav-header">SEKOLAH</li>
           <li class="nav-item">
             <a href="#" class="nav-link" onclick="showPage('kelulusan', this); return false;">
@@ -281,12 +436,11 @@
               <i class="nav-icon bi bi-box-arrow-right"></i><p>Logout</p>
             </a>
           </li>
-
+  
         </ul>
       </nav>
     </div>
   </aside>
-
   <!-- ============ MAIN CONTENT ============ -->
   <main class="app-main">
     <div class="app-content-header">
