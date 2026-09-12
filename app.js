@@ -3,7 +3,7 @@
  * v9.0 - AdminLTE 5 Redesign
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/GANTI_DEPLOYMENT_ID/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbygPnv3t4dMppEFosz2kY0bZc2sSXwgOOVDcur-rOXYVn9rWxKGJvyDCc3EE9vWubpZ/exec';
 const LS_KEY = 'absensi_session_v9';
 
 /*******************************************************
