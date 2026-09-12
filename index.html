@@ -4,9 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absensi Online - SMPN 8 Ciparasi</title>
+
+<!-- html5-qrcode untuk scanner -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- SheetJS untuk export Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- jsPDF + autoTable untuk export PDF -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/styles/overlayscrollbars.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
   /* ==================================================
@@ -36,9 +43,6 @@
   /* ==================================================
      TOPBAR
      ================================================== */
-    /* ==================================================
-     TOPBAR (logo + teks di tengah)
-     ================================================== */
   .topbar {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -51,8 +55,6 @@
     padding: 0 12px;
     z-index: 1000;
   }
-
-  /* Tombol toggle — kiri */
   .topbar .toggle-btn {
     background: none;
     border: none;
@@ -63,12 +65,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: none;
+    flex-shrink: 0;
     z-index: 2;
   }
   .topbar .toggle-btn:hover { background: #f1f5f9; }
-
-  /* Blok tengah — absolute, biar selalu center */
   .topbar-center {
     position: absolute;
     left: 50%;
@@ -95,23 +95,9 @@
     text-overflow: ellipsis;
     min-width: 0;
   }
-  .topbar-text .brand-line-1 {
-    font-weight: 700;
-    font-size: .85rem;
-    color: #1e293b;
-  }
-  .topbar-text .brand-line-2 {
-    font-size: .74rem;
-    color: #64748b;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .topbar-text .brand-line-3 {
-    font-size: .66rem;
-    color: #94a3b8;
-  }
-
-  /* User — kanan */
+  .topbar-text .brand-line-1 { font-weight: 700; font-size: .85rem; color: #1e293b; }
+  .topbar-text .brand-line-2 { font-size: .74rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-text .brand-line-3 { font-size: .66rem; color: #94a3b8; }
   .topbar-user {
     margin-left: auto;
     position: relative;
@@ -151,8 +137,9 @@
   }
   .user-dropdown .item:hover { background: #f1f5f9; }
   .user-dropdown .divider { height: 1px; background: #e2e8f0; margin: 4px 0; }
+
   /* ==================================================
-     SIDEBAR (SOLID)
+     SIDEBAR
      ================================================== */
   .sidebar {
     position: fixed;
@@ -167,9 +154,7 @@
     transition: transform .25s ease;
     border-right: 1px solid #0f172a;
   }
-  .sidebar.closed {
-    transform: translateX(-100%);
-  }
+  .sidebar.closed { transform: translateX(-100%); }
   .sidebar-brand {
     padding: 10px 14px;
     background: #0f172a;
@@ -220,34 +205,13 @@
     text-align: left;
     transition: background .15s;
   }
-  .sidebar-menu .nav-link:hover {
-    background: var(--sidebar-hover);
-    color: #fff;
-  }
-  .sidebar-menu .nav-link.active {
-    background: var(--brand);
-    color: #fff;
-  }
-  .sidebar-menu .nav-link.disabled {
-    opacity: .4;
-    cursor: not-allowed;
-  }
-  .sidebar-menu .nav-link.disabled:hover {
-    background: transparent;
-    color: var(--sidebar-text);
-  }
-  .sidebar-menu .nav-link .nav-icon {
-    font-size: 1rem;
-    flex-shrink: 0;
-    width: 18px;
-    text-align: center;
-  }
-  .sidebar-menu .nav-link p {
-    margin: 0;
-    flex: 1;
-  }
+  .sidebar-menu .nav-link:hover { background: var(--sidebar-hover); color: #fff; }
+  .sidebar-menu .nav-link.active { background: var(--brand); color: #fff; }
+  .sidebar-menu .nav-link.disabled { opacity: .4; cursor: not-allowed; }
+  .sidebar-menu .nav-link.disabled:hover { background: transparent; color: var(--sidebar-text); }
+  .sidebar-menu .nav-link .nav-icon { font-size: 1rem; flex-shrink: 0; width: 18px; text-align: center; }
+  .sidebar-menu .nav-link p { margin: 0; flex: 1; }
 
-  /* Overlay mobile — hanya muncul saat sidebar terbuka di layar kecil */
   .sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -267,25 +231,18 @@
     min-height: calc(100vh - var(--topbar-h) - var(--footer-h));
     transition: margin-left .25s ease;
   }
-  .main-content.full {
-    margin-left: 0;
-  }
+  .main-content.full { margin-left: 0; }
 
   .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .page-header h3 {
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #1e293b;
-  }
-  .page-header .breadcrumb {
-    font-size: .75rem;
-    color: #64748b;
-  }
+  .page-header h3 { font-size: 1.05rem; font-weight: 700; color: #1e293b; }
+  .page-header .breadcrumb { font-size: .75rem; color: #64748b; }
 
   /* ==================================================
      CARD
@@ -303,16 +260,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .card-header h4 {
-    font-size: .9rem;
-    font-weight: 600;
-    color: #1e293b;
-  }
+  .card-header h4 { font-size: .9rem; font-weight: 600; color: #1e293b; margin: 0; }
   .card-body { padding: 12px 14px; }
 
   /* ==================================================
-     SESSION BANNER
+     SESI BANNER
      ================================================== */
   .sesi-banner {
     background: linear-gradient(135deg, #0ea5e9, #0284c7);
@@ -364,6 +319,7 @@
     overflow: auto;
     max-height: 60vh;
     border-radius: 8px;
+    margin-top: 8px;
   }
   .table-wrap table {
     width: 100%;
@@ -426,7 +382,10 @@
     margin-bottom: 8px;
   }
   .form-control-sm, .form-select-sm { padding: 5px 8px; font-size: .8rem; }
-  .form-control:focus, .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(14,165,233,.15); }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px rgba(14,165,233,.15);
+  }
 
   .btn {
     display: inline-flex;
@@ -442,6 +401,7 @@
     transition: background .15s;
     color: #fff;
     background: var(--brand);
+    white-space: nowrap;
   }
   .btn:hover { background: var(--brand-dark); }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -456,25 +416,34 @@
   .btn-sm { padding: 5px 10px; font-size: .75rem; }
   .btn-full { width: 100%; }
 
-  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-  .row > [class*="col-"] { flex: 1; min-width: 0; }
-  .col-6 { flex: 0 0 calc(50% - 4px); }
-  .col-4 { flex: 0 0 calc(33.33% - 6px); }
-  .col-3 { flex: 0 0 calc(25% - 6px); }
-  .col-12 { flex: 0 0 100%; }
+  /* Row & Column Grid — pakai flexbox */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -4px 8px -4px;
+  }
+  .row > [class*="col-"] {
+    padding: 0 4px;
+    margin-bottom: 6px;
+  }
+  .col-4 { flex: 0 0 33.333%; max-width: 33.333%; }
+  .col-6 { flex: 0 0 50%; max-width: 50%; }
+  .col-12 { flex: 0 0 100%; max-width: 100%; }
 
   label { display: block; font-size: .78rem; color: #475569; margin-bottom: 4px; font-weight: 500; }
+
+  /* Tombol export sejajar: pastikan isi kolom pas tinggi */
+  .row > .col-6 > .btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   /* ==================================================
      SWITCH
      ================================================== */
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
-    flex-shrink: 0;
-  }
+  .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider {
     position: absolute;
@@ -487,10 +456,8 @@
   .slider:before {
     position: absolute;
     content: "";
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
+    height: 20px; width: 20px;
+    left: 3px; bottom: 3px;
     background: #fff;
     transition: .3s;
     border-radius: 50%;
@@ -570,8 +537,7 @@
     cursor: pointer;
   }
   .spinner {
-    width: 44px;
-    height: 44px;
+    width: 44px; height: 44px;
     border: 4px solid #e2e8f0;
     border-top-color: var(--brand);
     border-radius: 50%;
@@ -597,11 +563,9 @@
      ================================================== */
   .footer {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     height: var(--footer-h);
-    background: #0000FF;
+    background: #1e293b;
     color: #cbd5e1;
     text-align: center;
     font-size: .78rem;
@@ -610,7 +574,7 @@
   }
 
   /* ==================================================
-     CAMERA
+     CAMERA & MISC
      ================================================== */
   #guruReader { width: 100%; border-radius: 8px; overflow: hidden; }
   .nilai-input { width: 78px; padding: 5px; font-size: .82rem; text-align: center; }
@@ -632,6 +596,9 @@
   .py-2 { padding-top: 8px; padding-bottom: 8px; }
   .p-3 { padding: 12px; }
   .fw-bold { font-weight: 700; }
+  .d-flex { display: flex; }
+  .justify-content-between { justify-content: space-between; }
+  .align-items-center { align-items: center; }
 
   /* ==================================================
      MOBILE
@@ -640,17 +607,16 @@
     .sidebar { transform: translateX(-100%); }
     .sidebar.open { transform: translateX(0); }
     .main-content { margin-left: 0; }
-
     .topbar { padding: 0 8px; }
     .topbar-center { max-width: calc(100% - 100px); gap: 8px; }
     .topbar-logo { height: 28px; width: 28px; }
     .topbar-text .brand-line-1 { font-size: .74rem; }
     .topbar-text .brand-line-2 { font-size: .64rem; max-width: 130px; }
     .topbar-text .brand-line-3 { font-size: .58rem; }
-
     .rekap-table { font-size: .6rem; }
     .rekap-table th { font-size: .55rem; padding: 4px 2px; }
     .rekap-table td { font-size: .6rem; padding: 4px 2px; }
+    .col-6 { flex: 0 0 100%; max-width: 100%; }
   }
   @media (min-width: 993px) {
     .sidebar { transform: translateX(0); }
@@ -661,39 +627,36 @@
 </style>
 </head>
 <body>
-    <!-- ============ TOPBAR ============ -->
-    <header class="topbar">
-      <!-- KIRI: Toggle -->
-      <button class="toggle-btn" onclick="toggleSidebar()">
-        <i class="bi bi-list"></i>
-      </button>
-    
-      <!-- TENGAH: Logo + Teks -->
-      <div class="topbar-center">
-        <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
-        <div class="topbar-text">
-          <div class="brand-line-1">SMPN 8 CIPARASI</div>
-          <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
-          <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 12:30:33</div>
-        </div>
-      </div>
-    
-      <!-- KANAN: Foto Admin -->
-      <div class="topbar-user">
-        <button class="user-btn" onclick="toggleUserMenu()">
-          <i class="bi bi-person-circle"></i>
-        </button>
-        <div class="user-dropdown" id="userDropdown">
-          <div class="item text-muted" id="topbarUserName" style="cursor:default;">Belum Login</div>
-          <div class="divider"></div>
-          <div class="item" onclick="showLoginPopup(); closeUserMenu();"><i class="bi bi-box-arrow-in-right me-1"></i> Login</div>
-          <div class="item" onclick="doLogout(); closeUserMenu();"><i class="bi bi-box-arrow-right me-1"></i> Logout</div>
-        </div>
-      </div>
-    </header>
 
-  
-<!-- ============ SIDEBAR OVERLAY (mobile) ============ -->
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <button class="toggle-btn" onclick="toggleSidebar()">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <div class="topbar-center">
+    <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
+    <div class="topbar-text">
+      <div class="brand-line-1">SMPN 8 CIPARASI</div>
+      <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
+      <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 12:30:33</div>
+    </div>
+  </div>
+
+  <div class="topbar-user">
+    <button class="user-btn" onclick="toggleUserMenu()">
+      <i class="bi bi-person-circle"></i>
+    </button>
+    <div class="user-dropdown" id="userDropdown">
+      <div class="item text-muted" id="topbarUserName" style="cursor:default;">Belum Login</div>
+      <div class="divider"></div>
+      <div class="item" onclick="showLoginPopup(); closeUserMenu();"><i class="bi bi-box-arrow-in-right me-1"></i> Login</div>
+      <div class="item" onclick="doLogout(); closeUserMenu();"><i class="bi bi-box-arrow-right me-1"></i> Logout</div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ OVERLAY ============ -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <!-- ============ SIDEBAR ============ -->
@@ -712,6 +675,11 @@
 
     <li class="nav-header">ORANG TUA / SISWA</li>
     <li class="nav-item">
+      <a class="nav-link" id="menuLoginSiswa" onclick="showLoginPopup('siswa')">
+        <i class="nav-icon bi bi-person-badge"></i><p>Login Siswa</p>
+      </a>
+    </li>
+    <li class="nav-item">
       <a class="nav-link" onclick="showPage('cariSiswa', this)">
         <i class="nav-icon bi bi-search"></i><p>Cari Data Siswa</p>
       </a>
@@ -723,11 +691,16 @@
     </li>
     <li class="nav-item">
       <a class="nav-link disabled" id="menuSyarat" onclick="guardMenu('siswa','syarat', this)">
-        <i class="nav-icon bi bi-mortarboard"></i><p>Cek Syarat Naik Kelas / Lulus <i class="bi bi-lock-fill ms-1 small"></i></p>
+        <i class="nav-icon bi bi-mortarboard"></i><p>Cek Syarat <i class="bi bi-lock-fill ms-1 small"></i></p>
       </a>
     </li>
 
     <li class="nav-header">UTAMA</li>
+    <li class="nav-item">
+      <a class="nav-link" id="menuLoginGuru" onclick="showLoginPopup()">
+        <i class="nav-icon bi bi-person-workspace"></i><p>Login Guru / Admin</p>
+      </a>
+    </li>
     <li class="nav-item">
       <a class="nav-link disabled" id="menuQR" onclick="guardMenu('guru','qr', this)">
         <i class="nav-icon bi bi-qr-code-scan"></i><p>QR Barcode <i class="bi bi-lock-fill ms-1 small"></i></p>
@@ -778,7 +751,7 @@
   </ul>
 </aside>
 
-<!-- ============ MAIN CONTENT ============ -->
+<!-- ============ MAIN ============ -->
 <main class="main-content" id="mainContent">
 
   <div class="page-header">
@@ -786,7 +759,7 @@
     <div class="breadcrumb">Home / <span id="pageBreadcrumb">Dashboard</span></div>
   </div>
 
-  <!-- PAGE: DASHBOARD -->
+  <!-- DASHBOARD -->
   <div id="page-dashboard" class="page-section">
     <div id="sesiBannerContainer" class="mb-2"></div>
 
@@ -819,7 +792,7 @@
     </div>
   </div>
 
-  <!-- PAGE: CARI SISWA -->
+  <!-- CARI SISWA -->
   <div id="page-cariSiswa" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-search me-1"></i> Cari Data Siswa</h4></div>
@@ -836,7 +809,7 @@
     </div>
   </div>
 
-  <!-- PAGE: SIDIK JARI SISWA -->
+  <!-- SIDIK JARI SISWA -->
   <div id="page-sidikJariSiswa" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Siswa</h4></div>
@@ -850,7 +823,7 @@
     </div>
   </div>
 
-  <!-- PAGE: SYARAT -->
+  <!-- SYARAT -->
   <div id="page-syarat" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-mortarboard me-1"></i> Cek Syarat <span id="syaratJudul">Naik Kelas</span></h4></div>
@@ -862,7 +835,7 @@
     </div>
   </div>
 
-  <!-- PAGE: QR -->
+  <!-- QR -->
   <div id="page-qr" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-qr-code-scan me-1"></i> QR Barcode Scanner</h4></div>
@@ -896,7 +869,7 @@
     </div>
   </div>
 
-  <!-- PAGE: SIDIK JARI GURU -->
+  <!-- SIDIK JARI GURU -->
   <div id="page-sidikJariGuru" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Guru</h4></div>
@@ -909,7 +882,7 @@
     </div>
   </div>
 
-  <!-- PAGE: IZIN -->
+  <!-- IZIN -->
   <div id="page-izin" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-clipboard-plus me-1"></i> Input Izin / Sakit</h4></div>
@@ -935,36 +908,71 @@
     </div>
   </div>
 
-  <!-- PAGE: REKAP -->
+  <!-- REKAP -->
   <div id="page-rekap" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-file-earmark-bar-graph me-1"></i> Rekap Absensi</h4></div>
       <div class="card-body">
         <div class="row">
-          <div class="col-6"><input type="date" id="rekapDari" class="form-control form-control-sm"></div>
-          <div class="col-6"><input type="date" id="rekapSampai" class="form-control form-control-sm"></div>
           <div class="col-6">
+            <label>Dari</label>
+            <input type="date" id="rekapDari" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label>Sampai</label>
+            <input type="date" id="rekapSampai" class="form-control form-control-sm">
+          </div>
+          <div class="col-6">
+            <label>Peran</label>
             <select id="rekapRole" class="form-select form-select-sm">
               <option value="siswa">Siswa</option>
               <option value="guru" id="rekapRoleGuruOpt">Guru</option>
             </select>
           </div>
-          <div class="col-6"><button class="btn btn-primary btn-sm btn-full" onclick="muatRekapPeriode()"><i class="bi bi-search"></i> Tampilkan</button></div>
+          <div class="col-6">
+            <label>Kelas</label>
+            <select id="rekapKelas" class="form-select form-select-sm">
+              <option value="">Semua Kelas</option>
+            </select>
+          </div>
         </div>
+        <button class="btn btn-primary btn-sm btn-full mb-2" onclick="muatRekapPeriode()"><i class="bi bi-search"></i> Tampilkan</button>
+
+        <!-- Tombol export dalam wrapper row -->
+        <div class="row">
+          <div class="col-6">
+            <button class="btn btn-success btn-sm" onclick="exportRekapExcel()">
+              <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+          </div>
+          <div class="col-6">
+            <button class="btn btn-danger btn-sm" onclick="exportRekapPDF()">
+              <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </button>
+          </div>
+        </div>
+
         <div id="rekapPeriodeHasil" class="table-wrap"></div>
       </div>
     </div>
   </div>
 
-  <!-- PAGE: INPUT NILAI -->
+  <!-- INPUT NILAI -->
   <div id="page-inputNilai" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-pencil-square me-1"></i> Input Nilai</h4></div>
       <div class="card-body">
-        <input id="inputJenisNilai" class="form-control form-control-sm" placeholder="Jenis nilai (NH1, UTS, dll)">
+        <label>Jenis Nilai</label>
+        <input id="inputJenisNilai" class="form-control form-control-sm" placeholder="Contoh: NH1, UTS, UAS">
         <div class="row">
-          <div class="col-6"><select id="inputMapel" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
-          <div class="col-6"><select id="inputKelas" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select></div>
+          <div class="col-6">
+            <label>Mapel</label>
+            <select id="inputMapel" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select>
+          </div>
+          <div class="col-6">
+            <label>Kelas</label>
+            <select id="inputKelas" class="form-select form-select-sm" onchange="loadSiswaUntukInput()"></select>
+          </div>
         </div>
         <div id="inputNilaiBody"></div>
         <button class="btn btn-success btn-sm btn-full mt-2" onclick="simpanNilaiMassal()"><i class="bi bi-save"></i> Simpan Semua Nilai</button>
@@ -972,25 +980,47 @@
     </div>
   </div>
 
-  <!-- PAGE: DAFTAR NILAI -->
+  <!-- DAFTAR NILAI -->
   <div id="page-daftarNilai" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-table me-1"></i> Daftar Nilai</h4></div>
       <div class="card-body">
         <div class="row">
-          <div class="col-6"><select id="daftarMapel" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
-          <div class="col-6"><select id="daftarKelas" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select></div>
+          <div class="col-6">
+            <label>Mapel</label>
+            <select id="daftarMapel" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select>
+          </div>
+          <div class="col-6">
+            <label>Kelas</label>
+            <select id="daftarKelas" class="form-select form-select-sm" onchange="loadDaftarNilai()"></select>
+          </div>
         </div>
+
+        <!-- Tombol export dalam wrapper row -->
+        <div class="row">
+          <div class="col-6">
+            <button class="btn btn-success btn-sm" onclick="exportDaftarNilaiExcel()">
+              <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+          </div>
+          <div class="col-6">
+            <button class="btn btn-danger btn-sm" onclick="exportDaftarNilaiPDF()">
+              <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </button>
+          </div>
+        </div>
+
         <div id="daftarNilaiHasil" class="table-wrap"></div>
       </div>
     </div>
   </div>
 
-  <!-- PAGE: KELULUSAN -->
+  <!-- KELULUSAN -->
   <div id="page-kelulusan" class="page-section hidden">
     <div class="card">
       <div class="card-header"><h4><i class="bi bi-trophy me-1"></i> Cek Kelulusan</h4></div>
       <div class="card-body">
+        <label>NISN Siswa Kelas 9</label>
         <input id="kelulusanNisn" class="form-control form-control-sm" placeholder="NISN 8-10 digit" inputmode="numeric">
         <button class="btn btn-primary btn-sm btn-full mb-2" onclick="cekKelulusan()"><i class="bi bi-search"></i> Cek Kelulusan</button>
         <div id="kelulusanHasil" style="font-size:.82rem;"></div>
@@ -998,7 +1028,7 @@
     </div>
   </div>
 
-  <!-- PAGE: PENGATURAN -->
+  <!-- PENGATURAN -->
   <div id="page-pengaturan" class="page-section hidden">
     <div class="card">
       <div class="card-body">
@@ -1037,8 +1067,8 @@
         <div id="acc-izinfp" class="accordion-body">
           <div class="small text-muted mb-2">Berlaku <strong>hari ini saja</strong>.</div>
           <div class="row">
-            <div class="col-6"><button class="btn btn-success btn-sm btn-full" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button></div>
-            <div class="col-6"><button class="btn btn-danger btn-sm btn-full" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button></div>
+            <div class="col-6"><button class="btn btn-success btn-sm" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button></div>
+            <div class="col-6"><button class="btn btn-danger btn-sm" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button></div>
           </div>
           <div class="row">
             <div class="col-4"><select id="izinFpFilterRole" class="form-select form-select-sm" onchange="renderIzinFpList()"><option value="all">Semua</option><option value="siswa">Siswa</option><option value="guru">Guru</option></select></div>
@@ -1086,8 +1116,8 @@
         <div id="acc-historis" class="accordion-body">
           <div class="small text-muted mb-2">Arsip = pindahkan data lama ke sheet Historis, sisakan data hari ini.</div>
           <div class="row">
-            <div class="col-6"><button class="btn btn-primary btn-sm btn-full" onclick="adminArsipManual()">📦 Arsip Manual</button></div>
-            <div class="col-6"><button class="btn btn-success btn-sm btn-full" onclick="adminPasangTrigger()">⏰ Pasang Trigger</button></div>
+            <div class="col-6"><button class="btn btn-primary btn-sm" onclick="adminArsipManual()">📦 Arsip Manual</button></div>
+            <div class="col-6"><button class="btn btn-success btn-sm" onclick="adminPasangTrigger()">⏰ Pasang Trigger</button></div>
           </div>
           <div class="small text-muted mb-2 mt-2" id="infoArsip">Trigger: belum dipasang.</div>
           <h6 class="small fw-bold">📜 Log Aktivitas Terbaru</h6>
@@ -1106,7 +1136,7 @@
   <strong>@SMP NEGERI 8 SOBANG 2026</strong>
 </footer>
 
-<!-- ============ LOGIN MODAL ============ -->
+<!-- LOGIN MODAL -->
 <div id="loginModalOverlay" class="popup-overlay hidden">
   <div class="login-modal-box">
     <div class="text-center mb-3">
@@ -1121,7 +1151,7 @@
   </div>
 </div>
 
-<!-- ============ POPUP ============ -->
+<!-- POPUP -->
 <div id="popupOverlay" class="popup-overlay hidden">
   <div class="popup-box" id="popupBox">
     <div id="popupIcon" class="icon"></div>
@@ -1130,10 +1160,7 @@
   </div>
 </div>
 
-<!-- ============ SCRIPTS ============ -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
-
- 
