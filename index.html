@@ -639,20 +639,20 @@
 <body>
 
 <!-- ============ TOPBAR ============ -->
+<!-- ============ TOPBAR ============ -->
 <header class="topbar">
+  <!-- KIRI: Toggle + Logo + Nama Sekolah -->
   <button class="toggle-btn" onclick="toggleSidebar()">
     <i class="bi bi-list"></i>
   </button>
-
-  <div class="topbar-center">
-    <img src="logo_smp.png" alt="Logo" class="topbar-logo">
-    <div class="topbar-text">
-      <div class="brand-line-1">SMP NEGERI 8 CIPARASI</div>
-      <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 09:48:14</div>
-      <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
-    </div>
+  <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" class="topbar-logo">
+  <div class="topbar-text">
+    <div class="brand-line-1">SMPN 8 CIPARASI</div>
+    <div class="brand-line-2" id="topbarSubtitle">Dashboard</div>
+    <div class="brand-line-3" id="topbarDateTime">Sabtu, 12 September 2026 || 09:48:14</div>
   </div>
 
+  <!-- KANAN: Foto Admin -->
   <div class="topbar-user">
     <button class="user-btn" onclick="toggleUserMenu()">
       <i class="bi bi-person-circle"></i>
@@ -665,7 +665,6 @@
     </div>
   </div>
 </header>
-
 <!-- ============ SIDEBAR OVERLAY (mobile) ============ -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
