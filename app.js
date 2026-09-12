@@ -7,6 +7,41 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwYSdrSiOqFCyocCzYdKGvL
 const LS_KEY = 'absensi_session_v10';
 
 /*******************************************************
+ * SIDEBAR TOGGLE
+ *******************************************************/
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const main = document.getElementById('mainContent');
+  if (!sidebar) return;
+
+  if (window.innerWidth <= 992) {
+    // Mobile: slide in/out
+    sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('show');
+  } else {
+    // Desktop: collapse/expand
+    sidebar.classList.toggle('closed');
+    if (main) main.classList.toggle('full');
+  }
+}
+
+function toggleUserMenu() {
+  const d = document.getElementById('userDropdown');
+  if (d) d.classList.toggle('open');
+}
+function closeUserMenu() {
+  const d = document.getElementById('userDropdown');
+  if (d) d.classList.remove('open');
+}
+
+// Tutup user menu jika klik di luar
+document.addEventListener('click', (e) => {
+  const ud = document.getElementById('userDropdown');
+  const btn = e.target.closest('.user-btn');
+  if (ud && !btn && !e.target.closest('#userDropdown')) ud.classList.remove('open');
+});
+/*******************************************************
  * STATE
  *******************************************************/
 let currentUser = null;
@@ -245,6 +280,14 @@ function showPage(pageId, el) {
   if (pageId === 'inputNilai' || pageId === 'daftarNilai') { if (currentUser) initGuruNilai(); }
   if (pageId === 'pengaturan') { adminLoadAll(); }
 }
+  if (window.innerWidth <= 992) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      if (sidebar && sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('show');
+      }
+    }
 
 function canAccessPage(pageId) {
   const role = currentUser ? currentUser.role : null;
