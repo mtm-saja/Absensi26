@@ -3,448 +3,685 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Absensi Online QR</title>
+<title>Absensi Online - SMPN 8 Ciparasi</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/styles/overlayscrollbars.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/css/adminlte.min.css">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;padding:12px}
-  .container{max-width:520px;margin:0 auto}
-  h1{font-size:1.3rem;text-align:center;margin-bottom:12px;color:#38bdf8}
-  h3,h4{margin-bottom:8px}
-  h5{margin-bottom:6px}
-  .card{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-  label{display:block;font-size:.85rem;margin-bottom:4px;color:#94a3b8}
-  input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:1rem;margin-bottom:10px}
-  input[readonly]{background:#0f172a;color:#94a3b8;cursor:not-allowed}
-  button{padding:12px;border-radius:8px;border:none;background:#0ea5e9;color:#fff;font-weight:600;font-size:.95rem;cursor:pointer;transition:.2s}
-  button:hover{background:#0284c7}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  button.danger{background:#ef4444}button.danger:hover{background:#dc2626}
-  button.success{background:#22c55e}button.success:hover{background:#16a34a}
-  button.secondary{background:#475569}button.secondary:hover{background:#334155}
-  button.full{width:100%}
-  button.sm{padding:6px 10px;font-size:.8rem;width:auto}
-  .hidden{display:none!important}
-  #reader,#guruReader,#adminReader{width:100%;border-radius:8px;overflow:hidden;margin-bottom:10px}
-  .info{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:8px}
-  .row{display:flex;gap:8px}.row>*{flex:1}
-  .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
-  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.7rem;background:#334155;white-space:nowrap}
-  .badge.TW{background:#065f46;color:#6ee7b7}
-  .badge.TL{background:#78350f;color:#fcd34d}
-  .badge.ALPA{background:#7f1d1d;color:#fca5a5}
-  .badge.BOLOS{background:#581c87;color:#d8b4fe}
-  .badge.IZIN{background:#1e40af;color:#93c5fd}
-  .badge.SAKIT{background:#7c2d12;color:#fdba74}
-  .badge.admin{background:#7c2d12;color:#fdba74}
-  .badge.guru{background:#1e40af;color:#93c5fd}
-  .badge.siswa{background:#065f46;color:#6ee7b7}
-  .badge.BELUM{background:#334155;color:#94a3b8;font-style:italic}
-  table{width:100%;border-collapse:collapse;font-size:.8rem}
-  th,td{padding:6px;border-bottom:1px solid #334155;text-align:left}
-  th{color:#94a3b8;font-weight:600;font-size:.75rem}
-  .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-  .tabs button{flex:1;min-width:80px;padding:8px 4px;font-size:.72rem;background:#334155}
-  .tabs button.active{background:#0ea5e9}
-  .small-info{font-size:.75rem;color:#94a3b8;margin-bottom:8px}
-  .sesi-banner{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:10px;padding:12px;text-align:center;margin-bottom:12px}
-  .sesi-banner .label{font-size:.7rem;text-transform:uppercase;opacity:.8;letter-spacing:1px}
-  .sesi-banner .name{font-size:1.4rem;font-weight:700;margin:4px 0}
-  .sesi-banner .time{font-size:.8rem;opacity:.9}
-  .sesi-banner.warn{background:linear-gradient(135deg,#f59e0b,#d97706)}
-  .sesi-banner.err{background:linear-gradient(135deg,#ef4444,#dc2626)}
-  .sesi-banner .status-tag{display:inline-block;background:rgba(255,255,255,.2);padding:2px 10px;border-radius:999px;font-size:.7rem;margin-top:6px}
-  .switch{position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0}
-  .switch input{opacity:0;width:0;height:0}
-  .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#475569;transition:.3s;border-radius:28px}
-  .slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;bottom:3px;background:#fff;transition:.3s;border-radius:50%}
-  input:checked + .slider{background:#22c55e}
-  input:checked + .slider:before{transform:translateX(24px)}
-  .switch-row{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid #334155;gap:10px}
-  .switch-row:last-child{border-bottom:none}
-  .switch-row .label{font-size:.9rem;color:#e2e8f0}
-  .switch-row .desc{font-size:.75rem;color:#94a3b8;margin-top:2px}
-  .popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px)}
-  .popup-box{background:#1e293b;border-radius:16px;padding:24px 28px;text-align:center;min-width:220px;max-width:340px;box-shadow:0 20px 40px rgba(0,0,0,.5);animation:popIn .25s ease-out}
-  @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-  .popup-box .icon{font-size:2.5rem;margin-bottom:10px}
-  .popup-box .text{font-size:.95rem;color:#e2e8f0;line-height:1.4}
-  .popup-box.ok .icon{color:#22c55e}
-  .popup-box.err .icon{color:#ef4444}
-  .popup-box .close-btn{margin-top:14px;background:#0ea5e9;padding:8px 20px;border-radius:8px;border:none;color:#fff;font-weight:600;cursor:pointer}
-  .spinner{width:44px;height:44px;border:4px solid #334155;border-top-color:#0ea5e9;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .table-wrap{overflow:auto;max-height:420px;border-radius:8px}
-  .table-wrap table{min-width:100%}
-  .rekap-card{background:linear-gradient(135deg,#1e3a8a,#1e40af);border-radius:10px;padding:12px;margin-bottom:12px}
-  .rekap-title{font-size:.85rem;font-weight:700;text-align:center;letter-spacing:1px;margin-bottom:10px;color:#93c5fd}
-  .rekap-sesi-title{font-size:.95rem;font-weight:700;text-align:center;background:rgba(255,255,255,.1);padding:6px;border-radius:6px;margin-bottom:8px}
-  .rekap-table{width:100%;border-collapse:collapse;font-size:.72rem;background:#fff;border-radius:6px;overflow:hidden}
-  .rekap-table th{background:#3b82f6;color:#fff;padding:6px 4px;font-size:.68rem;text-align:center}
-  .rekap-table td{padding:6px 4px;text-align:center;color:#1e293b;border-bottom:1px solid #e2e8f0}
-  .rekap-table tr:last-child td{border-bottom:none}
-  .rekap-table td:first-child{font-weight:600;text-align:left;padding-left:10px}
-  .rekap-table .persen{font-weight:700}
-  .rekap-table .ok{color:#059669}
-  .rekap-table .warn{color:#d97706}
-  .rekap-table .bad{color:#dc2626}
-  .nilai-input{width:80px;padding:6px;font-size:.85rem;text-align:center;margin:0}
+  /* ============ CUSTOM STYLE ============ */
+  :root {
+    --brand: #0ea5e9;
+    --brand-dark: #0284c7;
+  }
+  body { font-family: 'Source Sans 3', 'Segoe UI', sans-serif; }
+
+  .app-sidebar { background: #1e293b; }
+  .app-sidebar .nav-link { color: #cbd5e1; border-radius: 6px; margin: 2px 6px; }
+  .app-sidebar .nav-link:hover { background: #334155; color: #fff; }
+  .app-sidebar .nav-link.active { background: var(--brand); color: #fff; }
+  .app-sidebar .nav-header { color: #94a3b8; font-size: .72rem; font-weight: 700; letter-spacing: 1px; padding: 12px 14px 4px; text-transform: uppercase; }
+  .app-sidebar .nav-link.disabled { opacity: .45; cursor: not-allowed; pointer-events: auto; }
+  .app-sidebar .nav-link.disabled:hover { background: transparent; }
+
+  .app-header { background: #fff; border-bottom: 1px solid #e2e8f0; }
+  .navbar-brand { font-weight: 700; color: #1e293b; }
+  .brand-sub { font-size: .75rem; color: #64748b; font-weight: 400; display: block; }
+
+  /* Sesi banner di dashboard */
+  .sesi-banner {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    border-radius: 12px; padding: 16px; color: #fff; text-align: center;
+    box-shadow: 0 4px 12px rgba(14,165,233,.25);
+  }
+  .sesi-banner.warn { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 12px rgba(245,158,11,.25); }
+  .sesi-banner.err { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239,68,68,.25); }
+  .sesi-banner .label { font-size: .72rem; text-transform: uppercase; opacity: .85; letter-spacing: 1.5px; }
+  .sesi-banner .name { font-size: 1.6rem; font-weight: 700; margin: 4px 0; }
+  .sesi-banner .time { font-size: .85rem; opacity: .9; }
+  .sesi-banner .status-tag { display: inline-block; background: rgba(255,255,255,.25); padding: 3px 12px; border-radius: 999px; font-size: .72rem; margin-top: 8px; }
+
+  /* Rekap table */
+  .rekap-card { background: linear-gradient(135deg, #1e3a8a, #1e40af); border-radius: 12px; padding: 16px; color: #fff; }
+  .rekap-title { font-size: .85rem; font-weight: 700; text-align: center; letter-spacing: 1px; margin-bottom: 14px; color: #93c5fd; }
+  .rekap-sesi-title { font-size: .95rem; font-weight: 700; text-align: center; background: rgba(255,255,255,.1); padding: 6px; border-radius: 6px; margin-bottom: 8px; }
+  .rekap-table { width: 100%; border-collapse: collapse; font-size: .75rem; background: #fff; border-radius: 6px; overflow: hidden; }
+  .rekap-table th { background: #3b82f6; color: #fff; padding: 8px 4px; font-size: .7rem; text-align: center; }
+  .rekap-table td { padding: 8px 4px; text-align: center; color: #1e293b; border-bottom: 1px solid #e2e8f0; }
+  .rekap-table tr:last-child td { border-bottom: none; }
+  .rekap-table td:first-child { font-weight: 600; text-align: left; padding-left: 12px; }
+  .rekap-table .persen { font-weight: 700; }
+  .rekap-table .ok { color: #059669; }
+  .rekap-table .warn { color: #d97706; }
+  .rekap-table .bad { color: #dc2626; }
+
+  /* Badge status */
+  .badge-TW { background: #065f46; color: #6ee7b7; }
+  .badge-TL { background: #78350f; color: #fcd34d; }
+  .badge-ALPA { background: #7f1d1d; color: #fca5a5; }
+  .badge-BOLOS { background: #581c87; color: #d8b4fe; }
+  .badge-IZIN { background: #1e40af; color: #93c5fd; }
+  .badge-SAKIT { background: #7c2d12; color: #fdba74; }
+  .badge-BELUM { background: #64748b; color: #f1f5f9; font-style: italic; }
+  .badge-role-admin { background: #7c2d12; color: #fdba74; }
+  .badge-role-guru { background: #1e40af; color: #93c5fd; }
+  .badge-role-siswa { background: #065f46; color: #6ee7b7; }
+
+  /* Popup custom */
+  .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(3px); }
+  .popup-box { background: #fff; border-radius: 16px; padding: 24px 28px; text-align: center; min-width: 240px; max-width: 380px; box-shadow: 0 20px 40px rgba(0,0,0,.25); animation: popIn .25s ease-out; }
+  @keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .popup-box .icon { font-size: 2.5rem; margin-bottom: 10px; }
+  .popup-box .text { font-size: .95rem; color: #1e293b; line-height: 1.4; }
+  .popup-box.ok .icon { color: #22c55e; }
+  .popup-box.err .icon { color: #ef4444; }
+  .popup-box .close-btn { margin-top: 14px; background: var(--brand); padding: 8px 20px; border-radius: 8px; border: none; color: #fff; font-weight: 600; cursor: pointer; }
+  .popup-box .close-btn:hover { background: var(--brand-dark); }
+  .spinner { width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top-color: var(--brand); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Switch toggle */
+  .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; transition: .3s; border-radius: 26px; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; transition: .3s; border-radius: 50%; }
+  input:checked + .slider { background: #22c55e; }
+  input:checked + .slider:before { transform: translateX(24px); }
+  .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid #e2e8f0; gap: 10px; }
+  .switch-row:last-child { border-bottom: none; }
+  .switch-row .label { font-size: .9rem; color: #1e293b; font-weight: 500; }
+  .switch-row .desc { font-size: .75rem; color: #64748b; margin-top: 2px; }
+
+  /* Camera */
+  #reader, #guruReader, #adminReader { width: 100%; border-radius: 8px; overflow: hidden; }
+
+  /* Sidebar brand */
+  .sidebar-brand { padding: 12px 16px; border-bottom: 1px solid #334155; }
+  .sidebar-brand img { height: 32px; }
+  .sidebar-brand .brand-text { color: #fff; font-weight: 700; font-size: .95rem; display: inline-block; vertical-align: middle; margin-left: 8px; }
+
+  /* Table responsive */
+  .table-wrap { overflow: auto; max-height: 500px; border-radius: 8px; }
+  .table-wrap table { min-width: 100%; }
+
+  /* Card header kecil */
+  .card-header h3.card-title { font-size: 1rem; font-weight: 600; }
+
+  /* Login modal */
+  .login-modal-box { background: #fff; border-radius: 16px; padding: 28px 24px; min-width: 300px; max-width: 380px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,.3); animation: popIn .25s ease-out; }
+
+  /* Footer */
+  .app-footer { background: #1e293b; color: #cbd5e1; padding: 12px 16px; text-align: center; font-size: .85rem; }
+
+  /* Nilai input */
+  .nilai-input { width: 90px; padding: 6px; font-size: .85rem; text-align: center; }
+
+  /* Hide helper */
+  .hidden { display: none !important; }
 </style>
 </head>
-<body>
-<div class="container">
-  <h1>📷 Absensi Online QR</h1>
+<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">
+<div class="app-wrapper">
 
-  <!-- LOGIN -->
-  <div id="loginPage" class="card">
-    <h3>Login</h3>
-    <label>Masukkan NISN Siswa atau PIN Guru/Admin</label>
-    <input id="loginInput" placeholder="NISN (8-10 digit) / PIN (4 digit)"
-           inputmode="numeric" autocomplete="off" maxlength="18">
-    <button class="full" onclick="doLogin()">Masuk</button>
-    <div class="info">🔹 Siswa: NISN (8–10 digit) &nbsp;|&nbsp; 🔹 Guru/Admin: PIN (4 digit)</div>
-  </div>
-
-  <!-- SISWA -->
-  <div id="siswaPage" class="hidden">
-    <div class="card">
-      <div class="hdr">
-        <div>
-          <div class="small-info">Login sebagai</div>
-          <div><strong id="siswaNama"></strong> <span class="badge siswa">siswa</span></div>
-          <div class="small-info" id="siswaNisn" style="margin-top:4px;"></div>
+  <!-- ============ TOPBAR ============ -->
+  <nav class="app-header navbar navbar-expand bg-white">
+    <div class="container-fluid">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+            <i class="bi bi-list fs-4"></i>
+          </a>
+        </li>
+      </ul>
+      <div class="navbar-brand mx-auto text-center" style="position:absolute; left:50%; transform:translateX(-50%);">
+        <img src="https://ui-avatars.com/api/?name=SMPN+8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo" style="height:32px; vertical-align:middle;">
+        <div style="display:inline-block; vertical-align:middle; margin-left:8px; text-align:left;">
+          <span style="font-weight:700; color:#1e293b;">SMPN 8 CIPARASI</span>
+          <span class="brand-sub" id="topbarSubtitle">Dashboard</span>
         </div>
-        <button class="danger sm" onclick="logout()">Logout</button>
       </div>
-      <div id="siswaSesiBanner"></div>
-      <div id="fingerprintArea">
-        <button id="btnFingerprint" class="success full" onclick="handleFingerprint()">
-          🖐️ Daftarkan Sidik Jari
-        </button>
-        <div class="info">Gunakan sensor sidik jari HP (WebAuthn) untuk absen.</div>
-      </div>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item dropdown">
+          <a class="nav-link" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle fs-4 text-secondary"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text" id="topbarUserName">Belum Login</span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="showLoginPopup()"><i class="bi bi-box-arrow-in-right me-1"></i> Login</a></li>
+            <li><a class="dropdown-item" href="#" onclick="doLogout()"><i class="bi bi-box-arrow-right me-1"></i> Logout</a></li>
+          </ul>
+        </li>
+      </ul>
     </div>
+  </nav>
 
-    <div class="card" id="syaratCard">
-      <h4>🎓 Cek Syarat <span id="syaratJudul">Naik Kelas</span></h4>
-      <div class="small-info">Hitung akumulasi kehadiran Anda. Syarat minimal <strong>80%</strong>.</div>
-      <button class="full" onclick="cekSyaratSaya()">📊 Cek Sekarang</button>
-      <div id="syaratHasil" style="margin-top:12px;"></div>
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="app-sidebar shadow" data-bs-theme="dark">
+    <div class="sidebar-brand">
+      <img src="https://ui-avatars.com/api/?name=S8&background=0ea5e9&color=fff&size=64&rounded=true" alt="Logo">
+      <span class="brand-text">Absensi Online</span>
     </div>
+    <div class="sidebar-wrapper">
+      <nav class="mt-2">
+        <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
 
-    <div class="card">
-      <h4>📋 Riwayat Kehadiran Hari Ini</h4>
-      <div class="small-info">Menampilkan semua user (guru & siswa).</div>
-      <div class="table-wrap">
-        <table id="riwayatGlobalUser">
-          <thead id="riwayatGlobalUserHead"></thead>
-          <tbody id="riwayatGlobalUserBody"></tbody>
-        </table>
-      </div>
-      <button class="secondary full" style="margin-top:10px;" onclick="muatRiwayat()">🔄 Refresh</button>
+          <!-- DASHBOARD -->
+          <li class="nav-header">DASHBOARD</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="showPage('dashboard'); return false;">
+              <i class="nav-icon bi bi-speedometer2"></i>
+              <p>Dashboard</p>
+            </a>
+          </li>
+
+          <!-- ORANG TUA / SISWA -->
+          <li class="nav-header">ORANG TUA / SISWA</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" id="menuLoginSiswa" onclick="showLoginPopup('siswa'); return false;">
+              <i class="nav-icon bi bi-person-badge"></i>
+              <p>Login Siswa</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showPage('cariSiswa'); return false;">
+              <i class="nav-icon bi bi-search"></i>
+              <p>Cari Data Siswa</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuFpSiswa" onclick="guardMenu('siswa','sidikJariSiswa'); return false;">
+              <i class="nav-icon bi bi-fingerprint"></i>
+              <p>Absensi Sidik Jari <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuSyarat" onclick="guardMenu('siswa','syarat'); return false;">
+              <i class="nav-icon bi bi-mortarboard"></i>
+              <p>Cek Syarat <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+
+          <!-- UTAMA -->
+          <li class="nav-header">UTAMA</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" id="menuLoginGuru" onclick="showLoginPopup(); return false;">
+              <i class="nav-icon bi bi-person-workspace"></i>
+              <p>Login Guru / Admin</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuQR" onclick="guardMenu('guru','qr'); return false;">
+              <i class="nav-icon bi bi-qr-code-scan"></i>
+              <p>QR Barcode <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuFpGuru" onclick="guardMenu('guru','sidikJariGuru'); return false;">
+              <i class="nav-icon bi bi-fingerprint"></i>
+              <p>Absensi Sidik Jari <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuIzin" onclick="guardMenu('guru','izin'); return false;">
+              <i class="nav-icon bi bi-clipboard-plus"></i>
+              <p>Izin / Sakit <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuRekap" onclick="guardMenu('guru','rekap'); return false;">
+              <i class="nav-icon bi bi-file-earmark-bar-graph"></i>
+              <p>Rekap Absensi <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuInputNilai" onclick="guardMenu('guru','inputNilai'); return false;">
+              <i class="nav-icon bi bi-pencil-square"></i>
+              <p>Input Nilai <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuDaftarNilai" onclick="guardMenu('guru','daftarNilai'); return false;">
+              <i class="nav-icon bi bi-table"></i>
+              <p>Daftar Nilai <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+
+          <!-- SEKOLAH -->
+          <li class="nav-header">SEKOLAH</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showPage('kelulusan'); return false;">
+              <i class="nav-icon bi bi-trophy"></i>
+              <p>Kelulusan</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled" id="menuPengaturan" onclick="guardMenu('admin','pengaturan'); return false;">
+              <i class="nav-icon bi bi-gear"></i>
+              <p>Pengaturan Sistem <i class="bi bi-lock-fill ms-1 small"></i></p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link" onclick="doLogout(); return false;">
+              <i class="nav-icon bi bi-box-arrow-right"></i>
+              <p>Logout</p>
+            </a>
+          </li>
+
+        </ul>
+      </nav>
     </div>
-  </div>
+  </aside>
 
-  <!-- GURU -->
-  <div id="guruPage" class="hidden">
-    <div class="card">
-      <div class="hdr">
-        <div>
-          <div class="small-info">Login sebagai</div>
-          <div><strong id="guruNama"></strong> <span class="badge guru">guru</span></div>
-        </div>
-        <button class="danger sm" onclick="logout()">Logout</button>
-      </div>
-      <div id="guruSesiBanner"></div>
-      <label>Mode Scan</label>
-      <select id="guruModeScan">
-        <option value="kamera">📷 Kamera HP (Scan Siswa)</option>
-        <option value="manual">⌨️ Input Manual</option>
-      </select>
-      <div id="guruManualBox" class="hidden">
-        <input id="guruManualBarcode" placeholder="Ketik NISN siswa lalu Enter" inputmode="numeric">
-        <button class="success full" onclick="guruSubmitManual()">Proses</button>
-      </div>
-      <div id="guruKameraBox">
-        <div id="guruReader"></div>
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="app-main">
+    <div class="app-content-header">
+      <div class="container-fluid">
         <div class="row">
-          <button id="guruBtnBuka" class="success" onclick="guruBukaKamera()">▶️ Buka Kamera</button>
-          <button class="danger" onclick="guruTutupKamera()">⏹️ Tutup Kamera</button>
-        </div>
-      </div>
-      <hr style="margin:14px 0;border-color:#334155">
-      <div id="guruFingerprintArea">
-        <button id="guruBtnFingerprint" class="success full" onclick="handleGuruFingerprint()">
-          🖐️ Daftarkan Sidik Jari
-        </button>
-        <div class="info">Untuk absen guru (via sidik jari HP).</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h4>📊 Rekap Kehadiran Realtime</h4>
-      <div class="small-info">Update otomatis setiap 30 detik</div>
-      <div id="guruRekapRealtime"></div>
-    </div>
-
-    <div class="card" id="guruIzinCard">
-      <h4>📝 Input Izin / Sakit Siswa</h4>
-      <div class="small-info">Masukkan NISN siswa yang izin/sakit pada sesi yang berlangsung.</div>
-      <label>NISN Siswa</label>
-      <input id="guruIzinNisn" placeholder="NISN 8-10 digit" inputmode="numeric" maxlength="10">
-      <label>Keterangan</label>
-      <select id="guruIzinKet">
-        <option value="IZIN">IZIN</option>
-        <option value="SAKIT">SAKIT</option>
-      </select>
-      <button class="success full" onclick="guruSimpanIzin()">💾 Simpan Izin</button>
-    </div>
-
-    <div class="card" id="guruInputNilaiCard">
-      <h4>📝 Input Nilai</h4>
-      <div class="small-info">Hanya mapel & kelas yang Anda ampu.</div>
-      <label>Jenis Nilai</label>
-      <input id="inputJenisNilai" placeholder="Contoh: NH1, NH2, UTS, UAS">
-      <label>Pilih Mapel</label>
-      <select id="inputMapel" onchange="loadSiswaUntukInput()"></select>
-      <label>Pilih Kelas</label>
-      <select id="inputKelas" onchange="loadSiswaUntukInput()"></select>
-      <div id="inputNilaiBody" style="margin-top:10px;"></div>
-      <button class="success full" style="margin-top:10px;" onclick="simpanNilaiMassal()" id="btnSimpanNilai">💾 Simpan Semua Nilai</button>
-    </div>
-
-    <div class="card" id="guruDaftarNilaiCard">
-      <h4>📋 Daftar Nilai</h4>
-      <div class="small-info">Kolom menyesuaikan jenis nilai yang pernah diinput.</div>
-      <label>Pilih Mapel</label>
-      <select id="daftarMapel" onchange="loadDaftarNilai()"></select>
-      <label>Pilih Kelas</label>
-      <select id="daftarKelas" onchange="loadDaftarNilai()"></select>
-      <div id="daftarNilaiHasil" style="margin-top:10px;overflow:auto;"></div>
-    </div>
-
-    <div class="card">
-      <h4>📋 Riwayat Kehadiran Hari Ini</h4>
-      <div class="small-info">Semua user (guru & siswa).</div>
-      <div class="table-wrap">
-        <table id="riwayatGlobalGuru">
-          <thead id="riwayatGlobalGuruHead"></thead>
-          <tbody id="riwayatGlobalGuruBody"></tbody>
-        </table>
-      </div>
-      <button class="secondary full" style="margin-top:10px;" onclick="muatRiwayat()">🔄 Refresh</button>
-    </div>
-  </div>
-
-  <!-- ADMIN -->
-  <div id="adminPage" class="hidden">
-    <div class="card">
-      <div class="hdr">
-        <div>
-          <div class="small-info">Login sebagai</div>
-          <div><strong id="adminNama"></strong> <span class="badge admin">admin</span></div>
-        </div>
-        <button class="danger sm" onclick="logout()">Logout</button>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button class="active" data-tab="scan" onclick="switchTab('scan')">📷 Scan</button>
-      <button data-tab="sesi" onclick="switchTab('sesi')">⏰ Sesi</button>
-      <button data-tab="izin" onclick="switchTab('izin')">📝 Izin/Sakit</button>
-      <button data-tab="izinfp" onclick="switchTab('izinfp')">🖐️ Izin Sidik Jari</button>
-      <button data-tab="libur" onclick="switchTab('libur')">🏖️ Libur</button>
-      <button data-tab="user" onclick="switchTab('user')">👤 User</button>
-      <button data-tab="riwayat" onclick="switchTab('riwayat')">📊 Riwayat</button>
-      <button data-tab="fitur" onclick="switchTab('fitur')">⚙️ Fitur</button>
-    </div>
-
-    <div id="tab-scan" class="card">
-      <h4>Scan Barcode</h4>
-      <label>Target Scan</label>
-      <select id="adminScanTarget" onchange="onAdminTargetChange()">
-        <option value="siswa">🎒 Barcode Siswa (NISN)</option>
-        <option value="guru">👨‍🏫 Barcode Guru (NIP)</option>
-      </select>
-      <label>Pilih Sesi</label>
-      <select id="adminSesiSelect"></select>
-      <label>Mode Scan</label>
-      <select id="adminModeScan">
-        <option value="kamera">📷 Kamera HP</option>
-        <option value="manual">⌨️ Input Manual</option>
-      </select>
-      <div id="adminManualBox" class="hidden">
-        <input id="adminManualBarcode" placeholder="Ketik barcode lalu Enter" inputmode="numeric">
-        <button class="success full" onclick="adminSubmitManual()">Proses</button>
-      </div>
-      <div id="adminKameraBox">
-        <div id="adminReader"></div>
-        <div class="row">
-          <button id="adminBtnBuka" class="success" onclick="adminBukaKamera()">▶️ Buka</button>
-          <button class="danger" onclick="adminTutupKamera()">⏹️ Tutup</button>
+          <div class="col-sm-6">
+            <h3 class="mb-0" id="pageTitle">Dashboard</h3>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-end">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item active" id="pageBreadcrumb">Dashboard</li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>
+    <div class="app-content">
+      <div class="container-fluid">
 
-    <div id="tab-sesi" class="card hidden">
-      <h4>Pengaturan Sesi</h4>
-      <div id="sesiList"></div>
-      <hr style="margin:12px 0;border-color:#334155">
-      <h4>Tambah Sesi Baru</h4>
-      <label>Nama Sesi</label>
-      <input id="newSesiNama" placeholder="Sesi 4">
-      <label>Mulai TW</label>
-      <input id="newSesiMulaiTW" type="time" value="16:00">
-      <label>Batas TW / Mulai TL</label>
-      <input id="newSesiBatasTW" type="time" value="16:30">
-      <label>Batas TL / Tutup</label>
-      <input id="newSesiBatasTL" type="time" value="17:00">
-      <button class="success full" onclick="adminTambahSesi()">➕ Tambah Sesi</button>
-    </div>
+        <!-- ===== PAGE: DASHBOARD ===== -->
+        <div id="page-dashboard" class="page-section">
+          <div id="sesiBannerContainer" class="mb-3"></div>
 
-    <div id="tab-izin" class="card hidden">
-      <h4>Input Izin / Sakit</h4>
-      <label>Peran</label>
-      <select id="izinRole">
-        <option value="siswa">Siswa</option>
-        <option value="guru">Guru</option>
-      </select>
-      <label>ID (NISN / NIP)</label>
-      <input id="izinId" placeholder="NISN atau NIP" inputmode="numeric">
-      <label>Nama</label>
-      <input id="izinNama" placeholder="Nama">
-      <label>Pilih Sesi</label>
-      <select id="izinSesiSelect"></select>
-      <label>Keterangan</label>
-      <select id="izinKet">
-        <option value="IZIN">IZIN</option>
-        <option value="SAKIT">SAKIT</option>
-      </select>
-      <button class="success full" onclick="adminSimpanIzin()">💾 Simpan</button>
-    </div>
+          <div class="card mb-3">
+            <div class="card-header">
+              <h3 class="card-title"><i class="bi bi-bar-chart-line me-1"></i> Rekap Kehadiran Hari Ini</h3>
+            </div>
+            <div class="card-body">
+              <div id="rekapRealtimeContainer"></div>
+            </div>
+          </div>
 
-    <div id="tab-izinfp" class="card hidden">
-      <h4>🖐️ Izin Sidik Jari Harian</h4>
-      <div class="small-info">
-        Aktifkan izin sidik jari untuk user tertentu <strong>hari ini saja</strong>.
-      </div>
-      <div class="row" style="margin-bottom:12px;">
-        <button class="success sm" style="flex:1" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button>
-        <button class="danger sm" style="flex:1" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button>
-      </div>
-      <label>Filter</label>
-      <div class="row" style="margin-bottom:8px;">
-        <select id="izinFpFilterRole" onchange="renderIzinFpList()">
-          <option value="all">Semua Role</option>
-          <option value="siswa">Siswa</option>
-          <option value="guru">Guru</option>
-        </select>
-        <select id="izinFpFilterStatus" onchange="renderIzinFpList()">
-          <option value="all">Semua Status</option>
-          <option value="allowed">Diizinkan</option>
-          <option value="denied">Ditolak</option>
-        </select>
-      </div>
-      <input id="izinFpSearch" placeholder="🔍 Cari nama / ID..." oninput="renderIzinFpList()" style="margin-bottom:12px;">
-      <div style="font-size:.75rem;color:#94a3b8;margin-bottom:6px;">
-        Menampilkan <strong id="izinFpCount">0</strong> user •
-        <span style="color:#22c55e">✅ <span id="izinFpCountOn">0</span></span> diizinkan
-      </div>
-      <div id="izinFpList" style="max-height:60vh;overflow:auto;border-radius:8px;"></div>
-      <button class="secondary full" style="margin-top:10px;" onclick="adminLoadIzinFp()">🔄 Refresh</button>
-    </div>
-
-    <div id="tab-libur" class="card hidden">
-      <h4>Hari Libur</h4>
-      <label>Tanggal</label>
-      <input id="liburTanggal" type="date">
-      <label>Keterangan</label>
-      <input id="liburKet" placeholder="Contoh: Libur Nasional">
-      <button class="success full" onclick="adminSimpanLibur()">➕ Simpan Libur</button>
-      <hr style="margin:12px 0;border-color:#334155">
-      <h4>Daftar Hari Libur</h4>
-      <div id="liburList" style="max-height:200px;overflow:auto;"></div>
-    </div>
-
-    <div id="tab-user" class="card hidden">
-      <h4>Reset PIN Guru/Admin</h4>
-      <div id="userList" style="max-height:250px;overflow:auto;margin-bottom:10px;"></div>
-      <hr style="margin:12px 0;border-color:#334155">
-      <h4>Reset Sidik Jari</h4>
-      <div id="fpList" style="max-height:200px;overflow:auto;"></div>
-      <button class="secondary full" style="margin-top:8px;" onclick="adminLoadFp()">🔄 Refresh Daftar Sidik Jari</button>
-    </div>
-
-    <div id="tab-riwayat" class="card hidden">
-      <h4>📊 Riwayat Global Hari Ini</h4>
-      <div class="small-info">
-        <strong>TW</strong> = Tepat Waktu • <strong>TL</strong> = Terlambat •
-        <strong>A</strong> = Alpa • <strong>B</strong> = Bolos •
-        <strong>IZIN/SAKIT</strong> = Izin • <strong>—</strong> = Belum Scan
-      </div>
-      <h4 style="margin-top:12px;">📈 Rekap Realtime</h4>
-      <div id="adminRekapRealtime"></div>
-      <div class="row" style="margin-bottom:8px;margin-top:12px;">
-        <button class="secondary sm" style="flex:1" onclick="muatRiwayat()">🔄 Refresh</button>
-        <button class="success sm" style="flex:1" onclick="adminGenerateStatus()">⚡ Generate Status</button>
-      </div>
-      <div class="table-wrap" style="max-height:500px;">
-        <table id="riwayatGlobalTable">
-          <thead id="riwayatGlobalHead"></thead>
-          <tbody id="riwayatGlobalBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="tab-fitur" class="card hidden">
-      <h4>⚙️ Pengaturan Fitur</h4>
-      <div class="small-info">Aktifkan / nonaktifkan fitur & atur periode perhitungan syarat kelas.</div>
-
-      <h5 style="margin-top:12px;color:#38bdf8;">📝 Input Izin/Sakit</h5>
-      <div class="switch-row">
-        <div>
-          <div class="label">Input Izin/Sakit Siswa</div>
-          <div class="desc">Izinkan input izin/sakit untuk siswa</div>
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h3 class="card-title mb-0"><i class="bi bi-clock-history me-1"></i> Riwayat Kehadiran Hari Ini</h3>
+              <button class="btn btn-sm btn-outline-primary" onclick="muatRiwayat()"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="table table-sm table-striped" id="riwayatTable">
+                  <thead id="riwayatTableHead"></thead>
+                  <tbody id="riwayatTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="fitIzinSiswa" onchange="adminSetFitur()">
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="switch-row">
-        <div>
-          <div class="label">Input Izin/Sakit Guru</div>
-          <div class="desc">Izinkan input izin/sakit untuk guru</div>
+
+        <!-- ===== PAGE: CARI SISWA ===== -->
+        <div id="page-cariSiswa" class="page-section hidden">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="bi bi-search me-1"></i> Cari Data Siswa</h3>
+            </div>
+            <div class="card-body">
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <input id="cariSiswaInput" class="form-control" placeholder="Ketik NISN atau Nama Siswa..." oninput="doCariSiswa()">
+                </div>
+                <div class="col-md-3">
+                  <select id="cariSiswaKelas" class="form-select" onchange="doCariSiswa()">
+                    <option value="">Semua Kelas</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <button class="btn btn-primary w-100" onclick="doCariSiswa()"><i class="bi bi-search"></i> Cari</button>
+                </div>
+              </div>
+              <div id="cariSiswaHasil"></div>
+            </div>
+          </div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="fitIzinGuru" onchange="adminSetFitur()">
-          <span class="slider"></span>
-        </label>
-      </div>
 
-      <h5 style="margin-top:20px;color:#38bdf8;">🎓 Periode Perhitungan Syarat Kelas</h5>
-      <div class="small-info">Tentukan tanggal mulai & akhir perhitungan akumulasi kehadiran.</div>
+        <!-- ===== PAGE: SIDIK JARI SISWA ===== -->
+        <div id="page-sidikJariSiswa" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Siswa</h3></div>
+            <div class="card-body">
+              <div id="siswaSesiBanner" class="mb-3"></div>
+              <button id="btnFingerprint" class="btn btn-success w-100" onclick="handleFingerprint()">
+                <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
+              </button>
+              <div class="text-muted small mt-2 text-center">Gunakan sensor sidik jari HP (WebAuthn) untuk absen.</div>
+            </div>
+          </div>
+        </div>
 
-      <label>Tanggal Mulai Dihitung</label>
-      <input type="date" id="fitTglMulai" onchange="adminSetFitur()">
-      <div class="small-info" style="margin-top:-4px;margin-bottom:10px;">
-        Sebelum tanggal ini, kehadiran <strong>tidak dihitung</strong> untuk syarat kelas.
-      </div>
+        <!-- ===== PAGE: SYARAT NAIK KELAS ===== -->
+        <div id="page-syarat" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-mortarboard me-1"></i> Cek Syarat <span id="syaratJudul">Naik Kelas</span></h3></div>
+            <div class="card-body">
+              <div class="text-muted small mb-3">Hitung akumulasi kehadiran Anda. Syarat minimal <strong>80%</strong>.</div>
+              <button class="btn btn-primary w-100 mb-3" onclick="cekSyaratSaya()"><i class="bi bi-bar-chart"></i> Cek Sekarang</button>
+              <div id="syaratHasil"></div>
+            </div>
+          </div>
+        </div>
 
-      <label>Tanggal Akhir Dihitung (opsional)</label>
-      <input type="date" id="fitTglAkhir" onchange="adminSetFitur()">
-      <div class="small-info" style="margin-top:-4px;margin-bottom:10px;">
-        Setelah tanggal ini, kehadiran <strong>tidak dihitung</strong>.
-      </div>
+        <!-- ===== PAGE: QR BARCODE ===== -->
+        <div id="page-qr" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-qr-code-scan me-1"></i> QR Barcode Scanner</h3></div>
+            <div class="card-body">
+              <div id="guruSesiBanner" class="mb-3"></div>
+              <div id="adminScanTargetBox" class="mb-3 hidden">
+                <label class="form-label fw-bold">Target Scan (Admin):</label>
+                <select id="adminScanTarget" class="form-select" onchange="onAdminTargetChange()">
+                  <option value="siswa">🎒 Barcode Siswa (NISN)</option>
+                  <option value="guru">👨‍🏫 Barcode Guru (NIP)</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Mode Scan</label>
+                <select id="qrModeScan" class="form-select" onchange="onQRModeChange()">
+                  <option value="kamera">📷 Kamera HP</option>
+                  <option value="manual">⌨️ Input Manual</option>
+                </select>
+              </div>
+              <div id="qrManualBox" class="hidden">
+                <input id="qrManualBarcode" class="form-control mb-2" placeholder="Ketik NISN/NIP lalu Enter" inputmode="numeric">
+                <button class="btn btn-success w-100" onclick="qrSubmitManual()">Proses</button>
+              </div>
+              <div id="qrKameraBox">
+                <div id="guruReader"></div>
+                <div class="row g-2 mt-2">
+                  <div class="col-6"><button id="qrBtnBuka" class="btn btn-success w-100" onclick="qrBukaKamera()"><i class="bi bi-play-fill"></i> Buka Kamera</button></div>
+                  <div class="col-6"><button class="btn btn-danger w-100" onclick="qrTutupKamera()"><i class="bi bi-stop-fill"></i> Tutup</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div style="background:rgba(14,165,233,.1);border-left:3px solid #0ea5e9;padding:10px;border-radius:6px;margin-top:10px;font-size:.78rem;color:#94a3b8;">
-        💡 <strong>Tips Uji Coba:</strong> Set tanggal mulai = tanggal resmi aplikasi digunakan.
+        <!-- ===== PAGE: SIDIK JARI GURU ===== -->
+        <div id="page-sidikJariGuru" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-fingerprint me-1"></i> Absensi Sidik Jari Guru</h3></div>
+            <div class="card-body">
+              <div id="guruFpSesiBanner" class="mb-3"></div>
+              <button id="guruBtnFingerprint" class="btn btn-success w-100" onclick="handleGuruFingerprint()">
+                <i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari
+              </button>
+              <div class="text-muted small mt-2 text-center">Untuk absen guru (via sidik jari HP).</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: IZIN / SAKIT ===== -->
+        <div id="page-izin" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-clipboard-plus me-1"></i> Input Izin / Sakit</h3></div>
+            <div class="card-body">
+              <div id="izinRoleBox" class="mb-3">
+                <label class="form-label">Peran</label>
+                <select id="izinRole" class="form-select">
+                  <option value="siswa">Siswa</option>
+                  <option value="guru" id="izinRoleGuruOpt">Guru</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ID (NISN / NIP)</label>
+                <input id="izinId" class="form-control" placeholder="NISN atau NIP" inputmode="numeric">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Nama</label>
+                <input id="izinNama" class="form-control" placeholder="Nama">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Sesi</label>
+                <select id="izinSesiSelect" class="form-select"></select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Keterangan</label>
+                <select id="izinKet" class="form-select">
+                  <option value="IZIN">IZIN</option>
+                  <option value="SAKIT">SAKIT</option>
+                </select>
+              </div>
+              <button class="btn btn-success w-100" onclick="simpanIzin()"><i class="bi bi-save"></i> Simpan</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: REKAP ABSENSI ===== -->
+        <div id="page-rekap" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-file-earmark-bar-graph me-1"></i> Rekap Absensi</h3></div>
+            <div class="card-body">
+              <div class="row g-2 mb-3">
+                <div class="col-md-3">
+                  <label class="form-label small">Dari Tanggal</label>
+                  <input type="date" id="rekapDari" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Sampai Tanggal</label>
+                  <input type="date" id="rekapSampai" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">Peran</label>
+                  <select id="rekapRole" class="form-select">
+                    <option value="siswa">Siswa</option>
+                    <option value="guru" id="rekapRoleGuruOpt">Guru</option>
+                  </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <button class="btn btn-primary w-100" onclick="muatRekapPeriode()"><i class="bi bi-search"></i> Tampilkan</button>
+                </div>
+              </div>
+              <div id="rekapPeriodeHasil"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: INPUT NILAI ===== -->
+        <div id="page-inputNilai" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-pencil-square me-1"></i> Input Nilai</h3></div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Jenis Nilai</label>
+                <input id="inputJenisNilai" class="form-control" placeholder="Contoh: NH1, NH2, UTS, UAS">
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Mapel</label>
+                  <select id="inputMapel" class="form-select" onchange="loadSiswaUntukInput()"></select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Kelas</label>
+                  <select id="inputKelas" class="form-select" onchange="loadSiswaUntukInput()"></select>
+                </div>
+              </div>
+              <div id="inputNilaiBody"></div>
+              <button class="btn btn-success w-100 mt-3" onclick="simpanNilaiMassal()"><i class="bi bi-save"></i> Simpan Semua Nilai</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: DAFTAR NILAI ===== -->
+        <div id="page-daftarNilai" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-table me-1"></i> Daftar Nilai</h3></div>
+            <div class="card-body">
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Mapel</label>
+                  <select id="daftarMapel" class="form-select" onchange="loadDaftarNilai()"></select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Kelas</label>
+                  <select id="daftarKelas" class="form-select" onchange="loadDaftarNilai()"></select>
+                </div>
+              </div>
+              <div id="daftarNilaiHasil"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: KELULUSAN ===== -->
+        <div id="page-kelulusan" class="page-section hidden">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title"><i class="bi bi-trophy me-1"></i> Cek Kelulusan</h3></div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Masukkan NISN Siswa Kelas 9</label>
+                <input id="kelulusanNisn" class="form-control" placeholder="NISN 8-10 digit" inputmode="numeric">
+              </div>
+              <button class="btn btn-primary w-100 mb-3" onclick="cekKelulusan()"><i class="bi bi-search"></i> Cek Kelulusan</button>
+              <div id="kelulusanHasil"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== PAGE: PENGATURAN SISTEM (ADMIN) ===== -->
+        <div id="page-pengaturan" class="page-section hidden">
+          <div class="card">
+            <div class="card-body p-0">
+              <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-sesi">⏰ Sesi</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-libur">🏖️ Libur</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-izinfp">🖐️ Izin Sidik Jari</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-user">👤 User</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-fitur">⚙️ Fitur</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-historis">📜 Historis</a></li>
+              </ul>
+              <div class="tab-content p-3">
+                <div class="tab-pane fade show active" id="tab-sesi">
+                  <h5>Pengaturan Sesi</h5>
+                  <div id="sesiList"></div>
+                  <hr>
+                  <h6>Tambah Sesi</h6>
+                  <div class="row g-2">
+                    <div class="col-md-3"><input id="newSesiNama" class="form-control" placeholder="Sesi 4"></div>
+                    <div class="col-md-2"><input id="newSesiMulaiTW" type="time" class="form-control" value="16:00"></div>
+                    <div class="col-md-2"><input id="newSesiBatasTW" type="time" class="form-control" value="16:30"></div>
+                    <div class="col-md-2"><input id="newSesiBatasTL" type="time" class="form-control" value="17:00"></div>
+                    <div class="col-md-3"><button class="btn btn-success w-100" onclick="adminTambahSesi()">➕ Tambah</button></div>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tab-libur">
+                  <h5>Hari Libur</h5>
+                  <div class="row g-2 mb-2">
+                    <div class="col-md-4"><input id="liburTanggal" type="date" class="form-control"></div>
+                    <div class="col-md-5"><input id="liburKet" class="form-control" placeholder="Keterangan"></div>
+                    <div class="col-md-3"><button class="btn btn-success w-100" onclick="adminSimpanLibur()">➕ Simpan</button></div>
+                  </div>
+                  <div id="liburList"></div>
+                </div>
+                <div class="tab-pane fade" id="tab-izinfp">
+                  <h5>🖐️ Izin Sidik Jari Harian</h5>
+                  <div class="small text-muted mb-2">Aktifkan izin sidik jari untuk user tertentu <strong>hari ini saja</strong>.</div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-6"><button class="btn btn-success w-100" onclick="adminBulkIzinFp(true)">✅ Izinkan Semua</button></div>
+                    <div class="col-6"><button class="btn btn-danger w-100" onclick="adminBulkIzinFp(false)">🚫 Tolak Semua</button></div>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-md-4">
+                      <select id="izinFpFilterRole" class="form-select" onchange="renderIzinFpList()">
+                        <option value="all">Semua Role</option>
+                        <option value="siswa">Siswa</option>
+                        <option value="guru">Guru</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <select id="izinFpFilterStatus" class="form-select" onchange="renderIzinFpList()">
+                        <option value="all">Semua Status</option>
+                        <option value="allowed">Diizinkan</option>
+                        <option value="denied">Ditolak</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <input id="izinFpSearch" class="form-control" placeholder="🔍 Cari..." oninput="renderIzinFpList()">
+                    </div>
+                  </div>
+                  <div class="small text-muted mb-2">Total: <strong id="izinFpCount">0</strong> • ✅ <span id="izinFpCountOn">0</span> diizinkan</div>
+                  <div id="izinFpList" style="max-height:60vh;overflow:auto;"></div>
+                </div>
+                <div class="tab-pane fade" id="tab-user">
+                  <h5>Reset PIN Guru/Admin</h5>
+                  <div id="userList" class="mb-3"></div>
+                  <h5>Reset Sidik Jari</h5>
+                  <div id="fpList"></div>
+                  <button class="btn btn-secondary btn-sm mt-2" onclick="adminLoadFp()">🔄 Refresh</button>
+                </div>
+                <div class="tab-pane fade" id="tab-fitur">
+                  <h5>⚙️ Pengaturan Fitur</h5>
+                  <div class="switch-row">
+                    <div><div class="label">Input Izin/Sakit Siswa</div><div class="desc">Izinkan input izin/sakit untuk siswa</div></div>
+                    <label class="switch"><input type="checkbox" id="fitIzinSiswa" onchange="adminSetFitur()"><span class="slider"></span></label>
+                  </div>
+                  <div class="switch-row">
+                    <div><div class="label">Input Izin/Sakit Guru</div><div class="desc">Izinkan input izin/sakit untuk guru</div></div>
+                    <label class="switch"><input type="checkbox" id="fitIzinGuru" onchange="adminSetFitur()"><span class="slider"></span></label>
+                  </div>
+                  <hr>
+                  <h6>🎓 Periode Perhitungan Syarat Kelas</h6>
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label class="form-label small">Tanggal Mulai Dihitung</label>
+                      <input type="date" id="fitTglMulai" class="form-control" onchange="adminSetFitur()">
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small">Tanggal Akhir (opsional)</label>
+                      <input type="date" id="fitTglAkhir" class="form-control" onchange="adminSetFitur()">
+                    </div>
+                  </div>
+                </div>
+                <div class="tab-pane fade" id="tab-historis">
+                  <h5>📜 Historis Aktivitas</h5>
+                  <div class="small text-muted mb-2">Log aktivitas sistem (scan, izin, sidik jari, dll).</div>
+                  <button class="btn btn-primary btn-sm mb-2" onclick="muatHistoris()">🔄 Muat Historis</button>
+                  <div id="historisHasil"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="app-footer">
+    <strong>@SMP NEGERI 8 SOBANG 2026</strong>
+  </footer>
+</div>
+
+<!-- ============ LOGIN MODAL ============ -->
+<div id="loginModalOverlay" class="popup-overlay hidden">
+  <div class="login-modal-box">
+    <div class="text-center mb-3">
+      <i class="bi bi-shield-lock-fill" style="font-size:2.5rem;color:var(--brand);"></i>
+      <h4 class="mt-2 mb-1">Login</h4>
+      <div class="small text-muted" id="loginModalSubtitle">Masukkan NISN Siswa atau PIN Guru/Admin</div>
+    </div>
+    <input id="loginInput" class="form-control form-control-lg text-center mb-2" placeholder="NISN / PIN" inputmode="numeric" autocomplete="off" maxlength="18">
+    <div class="small text-muted text-center mb-3">
+      🔹 Siswa: NISN (8–10 digit) &nbsp;|&nbsp; 🔹 Guru/Admin: PIN (4 digit)
+    </div>
+    <button class="btn btn-primary btn-lg w-100" onclick="doLogin()">Masuk</button>
+    <button class="btn btn-outline-secondary w-100 mt-2" onclick="closeLoginPopup()">Batal</button>
   </div>
 </div>
 
-<!-- ========== POPUP ========== -->
+<!-- ============ POPUP NOTIFIKASI ============ -->
 <div id="popupOverlay" class="popup-overlay hidden">
   <div class="popup-box" id="popupBox">
     <div id="popupIcon" class="icon"></div>
@@ -453,1127 +690,12 @@
   </div>
 </div>
 
-<script>
-/*******************************************************
- * KONFIG
- *******************************************************/
-const API_URL = 'https://script.google.com/macros/s/AKfycbzitUV9OmyTegzMh4vMahAbXaubLlWtzB0e8xzmytbFqlqCLOYBXrgXj1DfCF5MBPXV/exec';
-const LS_KEY = 'absensi_session_v8';
-
-/*******************************************************
- * STATE
- *******************************************************/
-let currentUser = null;
-let currentSesiList = [];
-let currentSesiAktif = null;
-let fiturGlobal = { izinIzinSakitGuru:'YA', izinIzinSakitSiswa:'YA', tanggalMulaiHitung:'', tanggalAkhirHitung:'' };
-let cameras = { guru:null, admin:null };
-let scanning = { guru:false, admin:false };
-let lastScan = { guru:{code:'',time:0}, admin:{code:'',time:0} };
-let sesiTimer = null;
-let rekapTimer = null;
-let izinFpData = [];
-let guruMapelList = [];
-let guruKelasList = [];
-let currentSiswaInput = [];
-
-/*******************************************************
- * POPUP
- *******************************************************/
-function showLoading(text) {
-  text = text || 'Memproses...';
-  const ov = document.getElementById('popupOverlay');
-  const box = document.getElementById('popupBox');
-  const icon = document.getElementById('popupIcon');
-  const content = document.getElementById('popupContent');
-  const btn = document.getElementById('popupClose');
-  box.className = 'popup-box';
-  icon.innerHTML = '<div class="spinner"></div>';
-  content.innerHTML = '<div class="text">' + text + '</div>';
-  btn.classList.add('hidden');
-  ov.classList.remove('hidden');
-}
-function showPopup(text, ok, autoCloseMs) {
-  if (ok === undefined) ok = true;
-  if (autoCloseMs === undefined) autoCloseMs = 1200;
-  const ov = document.getElementById('popupOverlay');
-  const box = document.getElementById('popupBox');
-  const icon = document.getElementById('popupIcon');
-  const content = document.getElementById('popupContent');
-  const btn = document.getElementById('popupClose');
-  box.className = 'popup-box ' + (ok ? 'ok' : 'err');
-  icon.textContent = ok ? '✅' : '❌';
-  content.innerHTML = '<div class="text">' + text + '</div>';
-  btn.classList.remove('hidden');
-  ov.classList.remove('hidden');
-  if (autoCloseMs > 0) {
-    clearTimeout(window._popupTimer);
-    window._popupTimer = setTimeout(closePopup, autoCloseMs);
-  }
-}
-function closePopup() {
-  document.getElementById('popupOverlay').classList.add('hidden');
-  clearTimeout(window._popupTimer);
-}
-function showMsg(elId, text, ok) { showPopup(text, ok); }
-
-/*******************************************************
- * API
- *******************************************************/
-async function api(action, payload) {
-  payload = payload || {};
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    body: JSON.stringify(Object.assign({ action: action }, payload)),
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-  });
-  return res.json();
-}
-
-/*******************************************************
- * SESSION
- *******************************************************/
-function saveSession() {
-  if (!currentUser) return localStorage.removeItem(LS_KEY);
-  localStorage.setItem(LS_KEY, JSON.stringify({
-    role: currentUser.role, user: currentUser.user,
-    hasFingerprint: currentUser.hasFingerprint,
-    allowFingerprint: currentUser.allowFingerprint,
-    allowIzinSakit: currentUser.allowIzinSakit, ts: Date.now()
-  }));
-}
-function loadSession() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    if (Date.now() - s.ts > 12*60*60*1000) { localStorage.removeItem(LS_KEY); return null; }
-    return s;
-  } catch(e) { return null; }
-}
-
-/*******************************************************
- * INIT
- *******************************************************/
-window.addEventListener('DOMContentLoaded', async () => {
-  const s = loadSession();
-  if (s) {
-    currentUser = s;
-    await muatFitur();
-    await muatSesi();
-    routeToPage();
-  }
-});
-
-/*******************************************************
- * LOGIN / LOGOUT
- *******************************************************/
-async function doLogin() {
-  const val = document.getElementById('loginInput').value.trim();
-  if (!val) { showPopup('Input wajib diisi', false); return; }
-  if (!/^\d{4}$/.test(val) && !/^\d{8,10}$/.test(val)) {
-    showPopup('Format salah. NISN 8-10 digit / PIN 4 digit.', false); return;
-  }
-  showLoading('Memverifikasi login...');
-  try {
-    const payload = /^\d{4}$/.test(val) ? { id:'', pin:val } : { id:val, pin:'' };
-    const r = await api('login', payload);
-    if (!r.ok) { showPopup(r.msg, false, 2000); return; }
-    currentUser = r;
-    saveSession();
-    document.getElementById('loginInput').value = '';
-    await muatFitur();
-    await muatSesi();
-    showPopup('Login Berhasil! Halo ' + r.user.nama, true, 1200);
-    setTimeout(() => { closePopup(); routeToPage(); }, 1000);
-  } catch(e) {
-    showPopup('Gagal koneksi: '+e.message, false, 2500);
-  }
-}
-function logout() {
-  guruTutupKamera(); adminTutupKamera();
-  if (sesiTimer) clearInterval(sesiTimer);
-  if (rekapTimer) clearInterval(rekapTimer);
-  currentUser = null;
-  localStorage.removeItem(LS_KEY);
-  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
-    document.getElementById(id).classList.add('hidden'));
-  document.getElementById('loginPage').classList.remove('hidden');
-  showPopup('Logout berhasil', true, 1200);
-}
-
-/*******************************************************
- * FITUR
- *******************************************************/
-async function muatFitur() {
-  try {
-    const r = await api('getFitur');
-    if (r.ok) fiturGlobal = r.fitur;
-  } catch(e) {}
-}
-
-/*******************************************************
- * ROUTING
- *******************************************************/
-async function routeToPage() {
-  ['loginPage','siswaPage','guruPage','adminPage'].forEach(id =>
-    document.getElementById(id).classList.add('hidden'));
-  const role = currentUser.role;
-  if (role === 'siswa') {
-    document.getElementById('siswaNama').textContent = currentUser.user.nama;
-    document.getElementById('siswaNisn').textContent = 'NISN: ' + currentUser.user.id;
-    document.getElementById('siswaPage').classList.remove('hidden');
-    updateFingerprintButton('siswa');
-    updateSyaratJudul();
-    muatRiwayat();
-    startSesiWatcher();
-  } else if (role === 'guru') {
-    document.getElementById('guruNama').textContent = currentUser.user.nama;
-    document.getElementById('guruPage').classList.remove('hidden');
-    updateFingerprintButton('guru');
-    muatRiwayat();
-    startSesiWatcher();
-    startRekapWatcher();
-    await initGuruNilai();
-  } else if (role === 'admin') {
-    document.getElementById('adminNama').textContent = currentUser.user.nama;
-    document.getElementById('adminPage').classList.remove('hidden');
-    adminLoadLibur(); adminLoadUsers(); adminLoadFp(); adminLoadFitur();
-    adminLoadIzinFp(); renderSesiList();
-    startSesiWatcher();
-    startRekapWatcher();
-  }
-}
-
-/*******************************************************
- * SESI
- *******************************************************/
-async function muatSesi() {
-  const r = await api('getSesi');
-  if (!r.ok) return;
-  currentSesiList = r.sesi;
-  const opts = r.sesi.map(s =>
-    '<option value="' + s.sesi + '">' + s.sesi + ' (TW ' + s.mulaiTW + '-' + s.batasTW + ' | TL ' + s.batasTW + '-' + s.batasTL + ')</option>'
-  ).join('');
-  ['adminSesiSelect','izinSesiSelect'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = opts || '<option value="">(Belum ada sesi)</option>';
-  });
-}
-async function refreshSesiAktif() {
-  try {
-    const r = await api('getSesiAktif');
-    currentSesiAktif = r.ok ? r : null;
-    renderSesiBanner();
-  } catch(e) {}
-}
-function renderSesiBanner() {
-  const buildBanner = (elId) => {
-    const el = document.getElementById(elId);
-    if (!el) return;
-    if (!currentSesiAktif) {
-      el.innerHTML = '<div class="sesi-banner err">' +
-        '<div class="label">Status Sesi</div>' +
-        '<div class="name">Tidak Ada Sesi</div>' +
-        '<div class="time">Saat ini tidak ada sesi berlangsung</div></div>';
-      return;
-    }
-    const s = currentSesiAktif.info;
-    const st = currentSesiAktif.status;
-    let cls = 'sesi-banner', tagText = '';
-    if (st === 'TW') { tagText = '🟢 Tepat Waktu'; }
-    else if (st === 'TL') { cls += ' warn'; tagText = '🟡 Terlambat'; }
-    else { cls += ' err'; tagText = '🔴 Ditutup'; }
-    el.innerHTML = '<div class="' + cls + '">' +
-      '<div class="label">Sesi Berlangsung</div>' +
-      '<div class="name">' + s.sesi + '</div>' +
-      '<div class="time">TW ' + s.mulaiTW + '-' + s.batasTW + ' | TL ' + s.batasTW + '-' + s.batasTL + '</div>' +
-      '<div class="status-tag">' + tagText + '</div></div>';
-  };
-  buildBanner('siswaSesiBanner');
-  buildBanner('guruSesiBanner');
-}
-function startSesiWatcher() {
-  if (sesiTimer) clearInterval(sesiTimer);
-  refreshSesiAktif();
-  sesiTimer = setInterval(refreshSesiAktif, 30000);
-}
-function startRekapWatcher() {
-  if (rekapTimer) clearInterval(rekapTimer);
-  muatRekapRealtime();
-  rekapTimer = setInterval(muatRekapRealtime, 30000);
-}
-
-/*******************************************************
- * REKAP REALTIME
- *******************************************************/
-async function muatRekapRealtime() {
-  try {
-    const r = await api('rekapRealtime');
-    if (!r.ok) return;
-    const html = renderRekapHTML(r.sesi);
-    ['guruRekapRealtime','adminRekapRealtime'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = html;
-    });
-  } catch(e) { console.error(e); }
-}
-function renderRekapHTML(sesiData) {
-  if (!sesiData || !sesiData.length) return '<div class="small-info">Belum ada sesi.</div>';
-  let html = '<div class="rekap-card"><div class="rekap-title">📊 REKAP KEHADIRAN HARI INI</div>';
-  sesiData.forEach(s => {
-    html += '<div style="margin-bottom:14px;">';
-    html += '<div class="rekap-sesi-title">' + s.sesi + '</div>';
-    html += '<table class="rekap-table"><thead><tr>' +
-      '<th>Peran</th><th>TW</th><th>TL</th><th>S</th><th>I</th><th>A</th><th>B</th><th>%</th>' +
-      '</tr></thead><tbody>';
-    const renderRow = (label, stat) => {
-      const p = stat.persen;
-      const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
-      return '<tr>' +
-        '<td>' + label + '</td>' +
-        '<td>' + (stat.TW || '-') + '</td>' +
-        '<td>' + (stat.TL || '-') + '</td>' +
-        '<td>' + (stat.S || '-') + '</td>' +
-        '<td>' + (stat.I || '-') + '</td>' +
-        '<td>' + (stat.A || '-') + '</td>' +
-        '<td>' + (stat.B || '-') + '</td>' +
-        '<td class="persen ' + cls + '">' + p + '%</td>' +
-        '</tr>';
-    };
-    html += renderRow('Guru', s.guru);
-    html += renderRow('Siswa', s.siswa);
-    html += '</tbody></table></div>';
-  });
-  html += '</div>';
-  return html;
-}
-
-/*******************************************************
- * FINGERPRINT
- *******************************************************/
-async function handleFingerprint() {
-  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
-  showLoading('Memeriksa izin...');
-  const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
-  if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini. Hubungi admin.', false, 2500);
-    return;
-  }
-  const sesi = currentSesiAktif.sesi;
-  if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
-  try {
-    if (!currentUser.hasFingerprint) {
-      showLoading('Mendaftarkan sidik jari...');
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const userId = new TextEncoder().encode(currentUser.user.id);
-      const cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: challenge, rp: { name: 'Absensi Online' },
-          user: { id: userId, name: currentUser.user.id, displayName: currentUser.user.nama },
-          pubKeyCredParams: [{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
-          authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
-          timeout: 60000, attestation: 'none'
-        }
-      });
-      if (!cred) throw new Error('Registrasi dibatalkan');
-      const reg = await api('registerFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama,
-        role: 'siswa', credentialId: b64(cred.rawId), publicKey: ''
-      });
-      if (!reg.ok) { showPopup(reg.msg, false); return; }
-      currentUser.hasFingerprint = true;
-      saveSession();
-      updateFingerprintButton('siswa');
-      showPopup('Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2000);
-    } else {
-      showLoading('Verifikasi sidik jari...');
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({
-        publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' }
-      });
-      const r = await api('absenFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama, role: 'siswa', sesi: sesi
-      });
-      showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
-      if (r.ok) {
-        if (navigator.vibrate) navigator.vibrate(200);
-        muatRiwayat();
-        muatRekapRealtime();
-      }
-    }
-  } catch(e) {
-    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false, 2000);
-    else showPopup('Error: '+e.message, false, 2500);
-  }
-}
-async function handleGuruFingerprint() {
-  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
-  showLoading('Memeriksa izin...');
-  const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
-  if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini.', false, 2500);
-    return;
-  }
-  const sesi = currentSesiAktif.sesi;
-  if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
-  try {
-    if (!currentUser.hasFingerprint) {
-      showLoading('Mendaftarkan sidik jari...');
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      const userId = new TextEncoder().encode(currentUser.user.id);
-      const cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: challenge, rp: { name: 'Absensi Online' },
-          user: { id: userId, name: currentUser.user.id, displayName: currentUser.user.nama },
-          pubKeyCredParams: [{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
-          authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
-          timeout: 60000, attestation: 'none'
-        }
-      });
-      if (!cred) throw new Error('Registrasi dibatalkan');
-      const reg = await api('registerFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama,
-        role: 'guru', credentialId: b64(cred.rawId), publicKey: ''
-      });
-      if (!reg.ok) { showPopup(reg.msg, false); return; }
-      currentUser.hasFingerprint = true;
-      saveSession();
-      updateFingerprintButton('guru');
-      showPopup('Sidik jari terdaftar. Tekan lagi untuk absen.', true, 2000);
-    } else {
-      showLoading('Verifikasi sidik jari...');
-      const challenge = crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({
-        publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' }
-      });
-      const r = await api('absenFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama, role: 'guru', sesi: sesi
-      });
-      showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
-      if (r.ok) {
-        if (navigator.vibrate) navigator.vibrate(200);
-        muatRiwayat();
-        muatRekapRealtime();
-      }
-    }
-  } catch(e) {
-    if (e.name === 'NotAllowedError') showPopup('Dibatalkan / tidak ada sidik jari', false, 2000);
-    else showPopup('Error: '+e.message, false, 2500);
-  }
-}
-function updateFingerprintButton(who) {
-  if (who === 'siswa') {
-    const btn = document.getElementById('btnFingerprint');
-    if (!btn) return;
-    btn.textContent = currentUser.hasFingerprint ? '🖐️ Absen Sidik Jari' : '🖐️ Daftarkan Sidik Jari';
-  } else if (who === 'guru') {
-    const btn = document.getElementById('guruBtnFingerprint');
-    if (!btn) return;
-    btn.textContent = currentUser.hasFingerprint ? '🖐️ Absen Sidik Jari' : '🖐️ Daftarkan Sidik Jari';
-  }
-}
-function b64(buffer) {
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
-}
-
-/*******************************************************
- * KAMERA GURU
- *******************************************************/
-async function guruBukaKamera() {
-  if (scanning.guru) return;
-  try {
-    cameras.guru = new Html5Qrcode("guruReader");
-    scanning.guru = true;
-    await cameras.guru.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      txt => onGuruScanSuccess(txt), () => {}
-    );
-    document.getElementById('guruBtnBuka').disabled = true;
-  } catch(e) {
-    scanning.guru = false;
-    showPopup('Gagal buka kamera: '+e.message, false);
-  }
-}
-async function guruTutupKamera() {
-  if (cameras.guru && scanning.guru) {
-    try { await cameras.guru.stop(); await cameras.guru.clear(); } catch(e){}
-    scanning.guru = false;
-  }
-  const b = document.getElementById('guruBtnBuka');
-  if (b) b.disabled = false;
-}
-function onGuruScanSuccess(txt) {
-  const now = Date.now();
-  if (txt === lastScan.guru.code && now - lastScan.guru.time < 3000) return;
-  lastScan.guru = { code: txt, time: now };
-  guruProsesScan(txt);
-}
-async function guruProsesScan(barcode) {
-  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
-  showLoading('Memproses absensi...');
-  try {
-    const r = await api('scan', {
-      scannerRole: 'guru', scannerId: currentUser.user.id,
-      barcode: String(barcode), sesi: currentSesiAktif.sesi
-    });
-    showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
-    if (r.ok) {
-      if (navigator.vibrate) navigator.vibrate(200);
-      muatRiwayat();
-      muatRekapRealtime();
-    }
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-function guruSubmitManual() {
-  const v = document.getElementById('guruManualBarcode').value.trim();
-  if (!v) return;
-  guruProsesScan(v);
-  document.getElementById('guruManualBarcode').value = '';
-}
-
-/*******************************************************
- * KAMERA ADMIN
- *******************************************************/
-function onAdminTargetChange() { adminTutupKamera(); }
-async function adminBukaKamera() {
-  if (scanning.admin) return;
-  try {
-    cameras.admin = new Html5Qrcode("adminReader");
-    scanning.admin = true;
-    await cameras.admin.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      txt => onAdminScanSuccess(txt), () => {}
-    );
-    document.getElementById('adminBtnBuka').disabled = true;
-  } catch(e) {
-    scanning.admin = false;
-    showPopup('Gagal buka kamera: '+e.message, false);
-  }
-}
-async function adminTutupKamera() {
-  if (cameras.admin && scanning.admin) {
-    try { await cameras.admin.stop(); await cameras.admin.clear(); } catch(e){}
-    scanning.admin = false;
-  }
-  const b = document.getElementById('adminBtnBuka');
-  if (b) b.disabled = false;
-}
-function onAdminScanSuccess(txt) {
-  const now = Date.now();
-  if (txt === lastScan.admin.code && now - lastScan.admin.time < 3000) return;
-  lastScan.admin = { code: txt, time: now };
-  adminProsesScan(txt);
-}
-async function adminProsesScan(barcode) {
-  const sesi = document.getElementById('adminSesiSelect').value;
-  if (!sesi) { showPopup('Pilih sesi dulu', false); return; }
-  showLoading('Memproses absensi...');
-  try {
-    const r = await api('scan', {
-      scannerRole: 'admin', scannerId: currentUser.user.id,
-      barcode: String(barcode), sesi: sesi
-    });
-    showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
-    if (r.ok) {
-      if (navigator.vibrate) navigator.vibrate(200);
-      muatRiwayat();
-      muatRekapRealtime();
-    }
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-function adminSubmitManual() {
-  const v = document.getElementById('adminManualBarcode').value.trim();
-  if (!v) return;
-  adminProsesScan(v);
-  document.getElementById('adminManualBarcode').value = '';
-}
-
-/*******************************************************
- * RIWAYAT GLOBAL
- *******************************************************/
-async function muatRiwayat() {
-  try {
-    const r = await api('riwayatGlobal');
-    if (!r.ok) return;
-    const sesiList = r.sesi;
-    const data = r.data;
-    const buildHead = (theadId) => {
-      const thead = document.getElementById(theadId);
-      if (!thead) return;
-      let html = '<tr><th>No</th><th>Nama</th><th>Role</th>';
-      sesiList.forEach(s => { html += '<th>' + s + '</th>'; });
-      html += '</tr>';
-      thead.innerHTML = html;
-    };
-    const buildBody = (tbodyId, dataArr) => {
-      const tbody = document.getElementById(tbodyId);
-      if (!tbody) return;
-      tbody.innerHTML = '';
-      if (!dataArr.length) {
-        tbody.innerHTML = '<tr><td colspan="' + (3 + sesiList.length) + '" style="text-align:center;color:#94a3b8;padding:12px;">Belum ada data</td></tr>';
-        return;
-      }
-      dataArr.forEach((u, i) => {
-        const tr = document.createElement('tr');
-        let row = '<td>' + (i+1) + '</td><td>' + u.nama + '</td><td><span class="badge ' + u.role + '">' + u.role + '</span></td>';
-        sesiList.forEach(s => {
-          const info = u.sesi[s] || { status: '-', jam: '' };
-          let st = info.status;
-          let label = st;
-          if (st === 'ALPA') label = 'A';
-          else if (st === 'BOLOS') label = 'B';
-          else if (st === 'BELUM' || st === '-') label = '—';
-          const cls = (st === 'BELUM' || st === '-') ? 'BELUM' : st;
-          const jam = info.jam ? '<br><span style="font-size:.65rem;color:#94a3b8">' + info.jam + '</span>' : '';
-          row += '<td><span class="badge ' + cls + '">' + label + '</span>' + jam + '</td>';
-        });
-        tr.innerHTML = row;
-        tbody.appendChild(tr);
-      });
-    };
-    buildHead('riwayatGlobalUserHead');
-    buildBody('riwayatGlobalUserBody', data);
-    buildHead('riwayatGlobalGuruHead');
-    buildBody('riwayatGlobalGuruBody', data);
-    buildHead('riwayatGlobalHead');
-    const sorted = data.slice().sort((a,b) => a.role === b.role ? 0 : (a.role === 'siswa' ? -1 : 1));
-    buildBody('riwayatGlobalBody', sorted);
-  } catch(e) { console.error(e); }
-}
-
-/*******************************************************
- * CEK SYARAT
- *******************************************************/
-function updateSyaratJudul() {
-  if (!currentUser || currentUser.role !== 'siswa') return;
-  const kelas = String(currentUser.user.kelas || '').replace(/\D/g,'');
-  const judul = document.getElementById('syaratJudul');
-  if (judul) judul.textContent = (kelas === '9') ? 'Lulus' : 'Naik Kelas';
-}
-async function cekSyaratSaya() {
-  showLoading('Menghitung akumulasi kehadiran...');
-  try {
-    const r = await api('cekSyaratKelas', { nisn: currentUser.user.id });
-    if (!r.ok) { showPopup(r.msg, false); return; }
-    const s = r.stat;
-    const ok = r.memenuhi;
-    const color = ok ? '#22c55e' : '#ef4444';
-    const bgColor = ok ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.15)';
-    document.getElementById('syaratHasil').innerHTML =
-      '<div style="background:' + bgColor + ';border-left:4px solid ' + color + ';padding:12px;border-radius:8px;">' +
-        '<div style="font-size:1.1rem;font-weight:700;color:' + color + ';margin-bottom:6px;">' +
-          (ok ? '✅' : '❌') + ' ' + r.pesan +
-        '</div>' +
-        '<div style="font-size:.85rem;color:#e2e8f0;">' +
-          'Persentase Kehadiran: <strong style="color:' + color + '">' + s.persen + '%</strong><br>' +
-          '<span style="font-size:.75rem;color:#94a3b8;">Syarat minimal 80%</span>' +
-        '</div>' +
-      '</div>' +
-      '<div style="margin-top:10px;font-size:.75rem;background:rgba(14,165,233,.1);padding:8px;border-radius:6px;color:#94a3b8;">' +
-        '📅 <strong>Periode dihitung:</strong><br>' +
-        'Mulai: <strong style="color:#e2e8f0">' + r.periode.mulai + '</strong><br>' +
-        'Akhir: <strong style="color:#e2e8f0">' + r.periode.akhir + '</strong>' +
-      '</div>' +
-      '<div style="margin-top:12px;font-size:.85rem;">' +
-        '<table style="width:100%;">' +
-          '<tr><td>Total Hari Sekolah</td><td style="text-align:right"><strong>' + s.totalHariSekolah + ' hari</strong></td></tr>' +
-          '<tr><td>Total Sesi Efektif</td><td style="text-align:right"><strong>' + s.totalSesiEfektif + ' sesi</strong></td></tr>' +
-          '<tr><td>✅ Tepat Waktu (TW)</td><td style="text-align:right"><strong>' + s.hadirTW + '</strong></td></tr>' +
-          '<tr><td>🟡 Terlambat (TL)</td><td style="text-align:right"><strong>' + s.hadirTL + '</strong></td></tr>' +
-          '<tr><td>📝 Izin</td><td style="text-align:right"><strong>' + s.izin + '</strong></td></tr>' +
-          '<tr><td>🤒 Sakit</td><td style="text-align:right"><strong>' + s.sakit + '</strong></td></tr>' +
-          '<tr><td>❌ Alpa</td><td style="text-align:right"><strong style="color:#fca5a5">' + s.alpa + '</strong></td></tr>' +
-          '<tr><td>🚫 Bolos</td><td style="text-align:right"><strong style="color:#d8b4fe">' + s.bolos + '</strong></td></tr>' +
-          '<tr style="border-top:2px solid #334155;"><td><strong>Total Hadir</strong></td><td style="text-align:right"><strong>' + s.totalHadir + '</strong></td></tr>' +
-        '</table>' +
-      '</div>';
-    closePopup();
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-
-/*******************************************************
- * GURU - NILAI
- *******************************************************/
-async function initGuruNilai() {
-  try {
-    const rMapel = await api('getMapelGuru', { nip: currentUser.user.id });
-    const rKelas = await api('getKelasGuru', { nip: currentUser.user.id });
-    guruMapelList = rMapel.ok ? rMapel.mapel : [];
-    guruKelasList = rKelas.ok ? rKelas.kelas : [];
-
-    ['inputMapel','daftarMapel'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = guruMapelList.length
-        ? guruMapelList.map(m => '<option value="' + m + '">' + m + '</option>').join('')
-        : '<option value="">(Belum ada mapel)</option>';
-    });
-    ['inputKelas','daftarKelas'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = guruKelasList.length
-        ? guruKelasList.map(k => '<option value="' + k + '">' + k + '</option>').join('')
-        : '<option value="">(Belum ada kelas)</option>';
-    });
-
-    loadSiswaUntukInput();
-    loadDaftarNilai();
-  } catch(e) { console.error(e); }
-}
-
-async function loadSiswaUntukInput() {
-  const kelas = document.getElementById('inputKelas').value;
-  const body = document.getElementById('inputNilaiBody');
-  if (!kelas) { body.innerHTML = '<div class="small-info">Pilih kelas dulu.</div>'; return; }
-  const r = await api('getSiswaByKelas', { kelas: kelas });
-  if (!r.ok || !r.data.length) {
-    body.innerHTML = '<div class="small-info">Tidak ada siswa di kelas ini.</div>';
-    return;
-  }
-  currentSiswaInput = r.data;
-  let html = '<div style="overflow:auto;max-height:400px;"><table style="min-width:100%;">';
-  html += '<thead><tr><th style="width:40px">No</th><th>Nama Siswa</th><th style="width:100px">Nilai</th></tr></thead><tbody>';
-  r.data.forEach((s, i) => {
-    html += '<tr>' +
-      '<td>' + (i+1) + '</td>' +
-      '<td>' + s.nama + '<br><span class="small-info">' + s.nisn + '</span></td>' +
-      '<td><input type="number" class="nilai-input" data-nisn="' + s.nisn + '" placeholder="0" min="0" max="100"></td>' +
-      '</tr>';
-  });
-  html += '</tbody></table></div>';
-  body.innerHTML = html;
-}
-
-async function simpanNilaiMassal() {
-  const jenis = document.getElementById('inputJenisNilai').value.trim();
-  const mapel = document.getElementById('inputMapel').value;
-  const kelas = document.getElementById('inputKelas').value;
-  if (!jenis) { showPopup('Isi jenis nilai dulu', false); return; }
-  if (!mapel || !kelas) { showPopup('Pilih mapel & kelas', false); return; }
-  const inputs = document.querySelectorAll('#inputNilaiBody .nilai-input');
-  const data = [];
-  inputs.forEach(inp => {
-    const nisn = inp.dataset.nisn;
-    const nilai = inp.value.trim();
-    if (nilai !== '') {
-      const s = currentSiswaInput.find(x => x.nisn === nisn);
-      data.push({ nisn: nisn, nama: s ? s.nama : '', nilai: nilai });
-    }
-  });
-  if (!data.length) { showPopup('Belum ada nilai yang diisi', false); return; }
-  showLoading('Menyimpan ' + data.length + ' nilai...');
-  try {
-    const r = await api('simpanNilai', {
-      nip: currentUser.user.id, namaGuru: currentUser.user.nama,
-      mapel: mapel, kelas: kelas, jenisNilai: jenis, data: data
-    });
-    showPopup(r.msg, r.ok, r.ok ? 1800 : 2500);
-    if (r.ok) {
-      document.getElementById('inputJenisNilai').value = '';
-      loadSiswaUntukInput();
-      loadDaftarNilai();
-    }
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-
-async function loadDaftarNilai() {
-  const mapel = document.getElementById('daftarMapel').value;
-  const kelas = document.getElementById('daftarKelas').value;
-  const el = document.getElementById('daftarNilaiHasil');
-  if (!mapel || !kelas) { el.innerHTML = '<div class="small-info">Pilih mapel & kelas.</div>'; return; }
-  showLoading('Memuat daftar nilai...');
-  try {
-    const r = await api('getDaftarNilai', { mapel: mapel, kelas: kelas });
-    closePopup();
-    if (!r.ok) { showPopup(r.msg, false); return; }
-    if (!r.data.length) { el.innerHTML = '<div class="small-info">Belum ada siswa.</div>'; return; }
-    if (!r.jenis.length) {
-      el.innerHTML = '<div class="small-info">Belum ada nilai untuk mapel & kelas ini.</div>';
-      return;
-    }
-    let html = '<div style="overflow:auto;"><table style="min-width:100%;">';
-    html += '<thead><tr><th style="width:40px">No</th><th>Nama</th>';
-    r.jenis.forEach(j => { html += '<th style="text-align:center;">' + j + '</th>'; });
-    html += '</tr></thead><tbody>';
-    r.data.forEach((s, i) => {
-      html += '<tr><td>' + (i+1) + '</td><td>' + s.nama + '<br><span class="small-info">' + s.nisn + '</span></td>';
-      r.jenis.forEach(j => {
-        const v = s.nilai[j] !== undefined ? s.nilai[j] : '-';
-        html += '<td style="text-align:center;">' + v + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table></div>';
-    el.innerHTML = html;
-  } catch(e) {
-    showPopup('Gagal: '+e.message, false, 2500);
-  }
-}
-
-/*******************************************************
- * ADMIN - TABS
- *******************************************************/
-function switchTab(tab) {
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
-  document.querySelector('.tabs button[data-tab="' + tab + '"]').classList.add('active');
-  ['scan','sesi','izin','izinfp','libur','user','riwayat','fitur'].forEach(t => {
-    document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
-  });
-  if (tab !== 'scan') adminTutupKamera();
-  if (tab === 'fitur') adminLoadFitur();
-  if (tab === 'izinfp') adminLoadIzinFp();
-  if (tab === 'riwayat') { muatRiwayat(); muatRekapRealtime(); }
-}
-
-/*******************************************************
- * ADMIN - SESI
- *******************************************************/
-function renderSesiList() {
-  const el = document.getElementById('sesiList');
-  if (!el) return;
-  if (!currentSesiList.length) { el.innerHTML = '<div class="small-info">Belum ada sesi.</div>'; return; }
-  el.innerHTML = currentSesiList.map(s =>
-    '<div class="row" style="align-items:center;margin-bottom:6px;">' +
-      '<div style="flex:3;font-size:.85rem">' +
-        '<strong>' + s.sesi + '</strong><br>' +
-        '<span class="small-info">TW ' + s.mulaiTW + '-' + s.batasTW + ' | TL ' + s.batasTW + '-' + s.batasTL + '</span>' +
-      '</div>' +
-      '<button class="danger sm" style="flex:1" onclick="adminHapusSesi(\'' + s.sesi + '\')">🗑️</button>' +
-    '</div>'
-  ).join('');
-}
-async function adminTambahSesi() {
-  const namaSesi = document.getElementById('newSesiNama').value.trim();
-  const mulaiTW  = document.getElementById('newSesiMulaiTW').value;
-  const batasTW  = document.getElementById('newSesiBatasTW').value;
-  const batasTL  = document.getElementById('newSesiBatasTL').value;
-  if (!namaSesi || !mulaiTW || !batasTW || !batasTL) {
-    showPopup('Semua field wajib diisi', false); return;
-  }
-  const p = { sesi: namaSesi, mulaiTW: mulaiTW, batasTW: batasTW, batasTL: batasTL, tutup: batasTL };
-  showLoading('Menyimpan sesi...');
-  const r = await api('tambahSesi', p);
-  if (r.ok) { document.getElementById('newSesiNama').value = ''; await muatSesi(); renderSesiList(); }
-  showPopup(r.msg, r.ok);
-}
-async function adminHapusSesi(sesi) {
-  if (!confirm('Hapus ' + sesi + '?')) return;
-  showLoading('Menghapus...');
-  const r = await api('hapusSesi', { sesi: sesi });
-  if (r.ok) { await muatSesi(); renderSesiList(); }
-  showPopup(r.msg, r.ok);
-}
-
-/*******************************************************
- * ADMIN - IZIN/SAKIT
- *******************************************************/
-async function adminSimpanIzin() {
-  const role = document.getElementById('izinRole').value;
-  const id = document.getElementById('izinId').value.trim();
-  const nama = document.getElementById('izinNama').value.trim();
-  const sesi = document.getElementById('izinSesiSelect').value;
-  const ket = document.getElementById('izinKet').value;
-  if (!id || !nama || !sesi) { showPopup('ID, Nama, dan Sesi wajib diisi', false); return; }
-  showLoading('Menyimpan izin...');
-  const r = await api('simpanIzin', { role: role, id: id, nama: nama, sesi: sesi, keterangan: ket });
-  if (r.ok) {
-    document.getElementById('izinId').value = '';
-    document.getElementById('izinNama').value = '';
-    muatRiwayat();
-    muatRekapRealtime();
-  }
-  showPopup(r.msg, r.ok);
-}
-
-/*******************************************************
- * GURU - INPUT IZIN SISWA
- *******************************************************/
-async function guruSimpanIzin() {
-  if (fiturGlobal.izinIzinSakitSiswa !== 'YA') {
-    showPopup('Fitur input izin siswa dinonaktifkan admin', false); return;
-  }
-  const nisn = document.getElementById('guruIzinNisn').value.trim();
-  const ket = document.getElementById('guruIzinKet').value;
-  if (!/^\d{8,10}$/.test(nisn)) { showPopup('NISN harus 8-10 digit', false); return; }
-  if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
-  showLoading('Menyimpan izin...');
-  try {
-    const r = await api('simpanIzin', {
-      role: 'siswa', id: nisn, nama: 'Siswa ' + nisn,
-      sesi: currentSesiAktif.sesi, keterangan: ket
-    });
-    if (r.ok) {
-      document.getElementById('guruIzinNisn').value = '';
-      muatRiwayat();
-      muatRekapRealtime();
-    }
-    showPopup(r.msg, r.ok);
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-
-/*******************************************************
- * ADMIN - IZIN FINGERPRINT
- *******************************************************/
-async function adminLoadIzinFp() {
-  showLoading('Memuat daftar user...');
-  try {
-    const r = await api('listIzinFpAll');
-    closePopup();
-    if (!r.ok) { showPopup(r.msg, false); return; }
-    izinFpData = r.data || [];
-    renderIzinFpList();
-  } catch(e) { showPopup('Gagal memuat: '+e.message, false, 2500); }
-}
-function renderIzinFpList() {
-  const el = document.getElementById('izinFpList');
-  if (!el) return;
-  const filterRole = document.getElementById('izinFpFilterRole').value;
-  const filterStatus = document.getElementById('izinFpFilterStatus').value;
-  const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
-  let list = izinFpData.slice();
-  if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
-  if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
-  if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
-  if (search) list = list.filter(u =>
-    String(u.nama).toLowerCase().indexOf(search) >= 0 ||
-    String(u.id).toLowerCase().indexOf(search) >= 0 ||
-    String(u.extra || '').toLowerCase().indexOf(search) >= 0
-  );
-  const totalOn = izinFpData.filter(u => u.allowed).length;
-  document.getElementById('izinFpCount').textContent = list.length;
-  document.getElementById('izinFpCountOn').textContent = totalOn;
-  if (!list.length) {
-    el.innerHTML = '<div class="small-info" style="text-align:center;padding:20px;">Tidak ada user sesuai filter.</div>';
-    return;
-  }
-  el.innerHTML = list.map(u => {
-    const roleBadge = '<span class="badge ' + u.role + '">' + u.role + '</span>';
-    const info = u.extra ? '<span class="small-info">' + u.extra + '</span>' : '';
-    const alasan = u.allowed && u.alasan
-      ? '<div style="font-size:.7rem;color:#6ee7b7;margin-top:2px;">📌 ' + u.alasan + '</div>' : '';
-    return '<div class="switch-row">' +
-      '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:.88rem;color:#e2e8f0;font-weight:500;">' + u.nama + '</div>' +
-        '<div style="font-size:.72rem;color:#94a3b8;margin-top:2px;">' +
-          u.id + ' • ' + roleBadge + ' ' + info +
-        '</div>' +
-        alasan +
-      '</div>' +
-      '<label class="switch">' +
-        '<input type="checkbox" ' + (u.allowed ? 'checked' : '') +
-               ' onchange="adminToggleIzinFp(\'' + u.id + '\', this.checked)">' +
-        '<span class="slider"></span>' +
-      '</label>' +
-    '</div>';
-  }).join('');
-}
-async function adminToggleIzinFp(id, allowed) {
-  const user = izinFpData.find(u => u.id === id);
-  if (!user) return;
-  let alasan = 'Izin khusus';
-  if (allowed) {
-    const input = prompt('Beri izin sidik jari untuk ' + user.nama + '.\nAlasan (opsional):', 'Kegiatan khusus');
-    if (input === null) { renderIzinFpList(); return; }
-    alasan = input.trim() || 'Izin khusus';
-  }
-  user.allowed = allowed;
-  user.alasan = allowed ? alasan : '';
-  renderIzinFpList();
-  try {
-    const r = allowed
-      ? await api('setIzinFp', { id: id, nama: user.nama, role: user.role, alasan: alasan })
-      : await api('hapusIzinFp', { id: id });
-    if (!r.ok) {
-      user.allowed = !allowed;
-      user.alasan = '';
-      renderIzinFpList();
-      showPopup(r.msg, false, 1800);
-      return;
-    }
-    showPopup(r.msg, true, 1000);
-  } catch(e) {
-    user.allowed = !allowed;
-    renderIzinFpList();
-    showPopup('Gagal: '+e.message, false, 2200);
-  }
-}
-async function adminBulkIzinFp(allowed) {
-  const filterRole = document.getElementById('izinFpFilterRole').value;
-  const filterStatus = document.getElementById('izinFpFilterStatus').value;
-  const search = (document.getElementById('izinFpSearch').value || '').toLowerCase().trim();
-  let list = izinFpData.slice();
-  if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
-  if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
-  if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
-  if (search) list = list.filter(u =>
-    String(u.nama).toLowerCase().indexOf(search) >= 0 ||
-    String(u.id).toLowerCase().indexOf(search) >= 0 ||
-    String(u.extra || '').toLowerCase().indexOf(search) >= 0
-  );
-  const target = allowed ? list.filter(u => !u.allowed) : list.filter(u => u.allowed);
-  if (!target.length) { showPopup('Tidak ada user yang perlu diubah', false, 1500); return; }
-  const aksi = allowed ? 'IZINKAN' : 'TOLAK';
-  if (!confirm(aksi + ' sidik jari untuk ' + target.length + ' user?')) return;
-  let alasan = 'Izin massal';
-  if (allowed) {
-    const input = prompt('Alasan pemberian izin massal (opsional):', 'PJJ / Kegiatan khusus');
-    if (input === null) return;
-    alasan = input.trim() || 'Izin massal';
-  }
-  showLoading((allowed ? 'Memberi' : 'Mencabut') + ' izin ' + target.length + ' user...');
-  try {
-    const ids = target.map(u => u.id);
-    const r = await api('setIzinFpBulk', { ids: ids, allowed: allowed, alasan: alasan });
-    if (r.ok) await adminLoadIzinFp();
-    else showPopup(r.msg, false);
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-
-/*******************************************************
- * ADMIN - LIBUR
- *******************************************************/
-async function adminSimpanLibur() {
-  const tanggal = document.getElementById('liburTanggal').value;
-  const keterangan = document.getElementById('liburKet').value.trim();
-  if (!tanggal || !keterangan) { showPopup('Tanggal & keterangan wajib', false); return; }
-  showLoading('Menyimpan...');
-  const r = await api('simpanLibur', { tanggal: tanggal, keterangan: keterangan });
-  if (r.ok) { document.getElementById('liburKet').value = ''; adminLoadLibur(); }
-  showPopup(r.msg, r.ok);
-}
-async function adminLoadLibur() {
-  const r = await api('listLibur');
-  const el = document.getElementById('liburList');
-  if (!el) return;
-  if (!r.ok || !r.data.length) { el.innerHTML = '<div class="small-info">Belum ada hari libur.</div>'; return; }
-  el.innerHTML = r.data.map(l =>
-    '<div class="row" style="align-items:center;margin-bottom:4px;">' +
-      '<div style="flex:3;font-size:.8rem">' + l.tanggal + ' — ' + l.keterangan + '</div>' +
-      '<button class="danger sm" style="flex:1" onclick="adminHapusLibur(\'' + l.tanggal + '\')">🗑️</button>' +
-    '</div>'
-  ).join('');
-}
-async function adminHapusLibur(tanggal) {
-  if (!confirm('Hapus libur ' + tanggal + '?')) return;
-  showLoading('Menghapus...');
-  const r = await api('hapusLibur', { tanggal: tanggal });
-  if (r.ok) adminLoadLibur();
-  showPopup(r.msg, r.ok);
-}
-
-/*******************************************************
- * ADMIN - USER & FP
- *******************************************************/
-async function adminLoadUsers() {
-  const r = await api('listUsers');
-  const el = document.getElementById('userList');
-  if (!el) return;
-  if (!r.ok || !r.data.length) { el.innerHTML = '<div class="small-info">Tidak ada user.</div>'; return; }
-  el.innerHTML = r.data.map(u =>
-    '<div class="row" style="align-items:center;margin-bottom:6px;">' +
-      '<div style="flex:3;font-size:.8rem"><strong>' + u.nama + '</strong><br><span class="small-info">' + u.id + ' • ' + u.role + '</span></div>' +
-      '<button class="secondary sm" style="flex:1" onclick="adminResetPin(\'' + u.id + '\',\'' + u.nama + '\')">🔑 PIN</button>' +
-    '</div>'
-  ).join('');
-}
-async function adminResetPin(id, nama) {
-  const newPin = prompt('PIN baru untuk ' + nama + ' (4 digit):');
-  if (!newPin) return;
-  if (!/^\d{4}$/.test(newPin)) { showPopup('PIN harus 4 digit', false); return; }
-  showLoading('Menyimpan...');
-  const r = await api('resetPin', { id: id, newPin: newPin });
-  showPopup(r.msg, r.ok);
-}
-async function adminLoadFp() {
-  const r = await api('listFingerprint');
-  const el = document.getElementById('fpList');
-  if (!el) return;
-  if (!r.ok || !r.data.length) { el.innerHTML = '<div class="small-info">Belum ada sidik jari terdaftar.</div>'; return; }
-  el.innerHTML = r.data.map(f =>
-    '<div class="row" style="align-items:center;margin-bottom:6px;">' +
-      '<div style="flex:3;font-size:.8rem"><strong>' + f.nama + '</strong><br><span class="small-info">' + f.id + ' • ' + f.role + '</span></div>' +
-      '<button class="danger sm" style="flex:1" onclick="adminResetFp(\'' + f.id + '\',\'' + f.nama + '\')">🗑️ Reset</button>' +
-    '</div>'
-  ).join('');
-}
-async function adminResetFp(id, nama) {
-  if (!confirm('Reset sidik jari ' + nama + '?')) return;
-  showLoading('Mereset...');
-  const r = await api('resetFingerprint', { id: id });
-  if (r.ok) adminLoadFp();
-  showPopup(r.msg, r.ok);
-}
-
-/*******************************************************
- * ADMIN - RIWAYAT & GENERATE
- *******************************************************/
-async function adminGenerateStatus() {
-  if (!confirm('Generate status ALPA/BOLOS otomatis untuk sesi yang sudah ditutup?')) return;
-  showLoading('Generate status otomatis...');
-  try {
-    const r = await api('generateOtomatis');
-    showPopup(r.msg, r.ok, 2500);
-    if (r.ok) { muatRiwayat(); muatRekapRealtime(); }
-  } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
-}
-
-/*******************************************************
- * ADMIN - FITUR
- *******************************************************/
-async function adminLoadFitur() {
-  const r = await api('getFitur');
-  if (!r.ok) return;
-  fiturGlobal = r.fitur;
-  const el1 = document.getElementById('fitIzinSiswa');
-  const el2 = document.getElementById('fitIzinGuru');
-  const el3 = document.getElementById('fitTglMulai');
-  const el4 = document.getElementById('fitTglAkhir');
-  if (el1) el1.checked = fiturGlobal.izinIzinSakitSiswa === 'YA';
-  if (el2) el2.checked = fiturGlobal.izinIzinSakitGuru === 'YA';
-  if (el3) el3.value = fiturGlobal.tanggalMulaiHitung || '';
-  if (el4) el4.value = fiturGlobal.tanggalAkhirHitung || '';
-}
-async function adminSetFitur() {
-  const updates = {
-    izinIzinSakitSiswa: document.getElementById('fitIzinSiswa').checked ? 'YA' : 'TIDAK',
-    izinIzinSakitGuru:  document.getElementById('fitIzinGuru').checked  ? 'YA' : 'TIDAK',
-    tanggalMulaiHitung: document.getElementById('fitTglMulai').value || '',
-    tanggalAkhirHitung: document.getElementById('fitTglAkhir').value || ''
-  };
-  showLoading('Menyimpan pengaturan...');
-  const r = await api('setFitur', { fitur: updates });
-  if (r.ok) fiturGlobal = Object.assign(fiturGlobal, updates);
-  showPopup(r.msg, r.ok);
-}
-
-/*******************************************************
- * EVENT LISTENERS
- *******************************************************/
-document.addEventListener('keypress', (e) => {
-  if (e.target.id === 'loginInput' && e.key === 'Enter') doLogin();
-  if (e.target.id === 'guruManualBarcode' && e.key === 'Enter') guruSubmitManual();
-  if (e.target.id === 'adminManualBarcode' && e.key === 'Enter') adminSubmitManual();
-});
-document.addEventListener('input', (e) => {
-  if (['loginInput','guruManualBarcode','adminManualBarcode','izinId','guruIzinNisn'].indexOf(e.target.id) >= 0) {
-    e.target.value = e.target.value.replace(/\D/g,'');
-  }
-});
-document.addEventListener('change', (e) => {
-  if (e.target.id === 'guruModeScan') {
-    const manual = e.target.value === 'manual';
-    document.getElementById('guruManualBox').classList.toggle('hidden', !manual);
-    document.getElementById('guruKameraBox').classList.toggle('hidden', manual);
-    if (manual) guruTutupKamera();
-  }
-  if (e.target.id === 'adminModeScan') {
-    const manual = e.target.value === 'manual';
-    document.getElementById('adminManualBox').classList.toggle('hidden', !manual);
-    document.getElementById('adminKameraBox').classList.toggle('hidden', manual);
-    if (manual) adminTutupKamera();
-  }
-});
-</script>
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.10.1/browser/overlayscrollbars.browser.es6.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@4.0.0-rc4/dist/js/adminlte.min.js"></script>
+<script src="app.js"></script>
+ 
 </body>
 </html>
