@@ -276,7 +276,25 @@
     padding: 8px 12px 2px;
     text-transform: uppercase;
   }
-
+  /* Override AdminLTE layout mode */
+  body .app-sidebar.sidebar-solid {
+    --bs-sidebar-bg: #1e293b;
+    --bs-sidebar-color: #cbd5e1;
+    --bs-sidebar-hover-bg: #334155;
+    --bs-sidebar-hover-color: #fff;
+    --bs-sidebar-active-bg: #0ea5e9;
+    --bs-sidebar-active-color: #fff;
+  }
+  body .app-sidebar.sidebar-solid .sidebar-wrapper {
+    background-color: #1e293b !important;
+    backdrop-filter: none !important;
+  }
+  /* Pastikan tidak ada efek blur/transparan dari AdminLTE */
+  .app-sidebar.sidebar-solid,
+  .app-sidebar.sidebar-solid * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   /* Mobile: pastikan sidebar solid juga */
   @media (max-width: 992px) {
     .app-sidebar.sidebar-solid {
