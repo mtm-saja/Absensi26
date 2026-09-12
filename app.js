@@ -1,23 +1,26 @@
 /*******************************************************
  * ABSENSI ONLINE - FRONTEND LOGIC
- * v9.0 - AdminLTE 5 Redesign
+ * v10.0 - Perbaikan Layout & Fitur Historis
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyP2QpoBj6SWl1VYVNbyimHkoukE_mwc2hJmmLUorX7frSRNB9oM0mMDaYkSuKT7cKr/exec';
-const LS_KEY = 'absensi_session_v9';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYSdrSiOqFCyocCzYdKGvLcKjgykSOOTVYCdNoZilXKXIZ35bgUPsuFCB48SzEgnkb/exec';
+const LS_KEY = 'absensi_session_v10';
 
 /*******************************************************
- * STATE GLOBAL
+ * STATE
  *******************************************************/
 let currentUser = null;
 let currentSesiList = [];
 let currentSesiAktif = null;
+let statusHariIni = { isLibur: false, isSesiAktif: false, pesan: '' };
 let fiturGlobal = { izinIzinSakitGuru:'YA', izinIzinSakitSiswa:'YA', tanggalMulaiHitung:'', tanggalAkhirHitung:'' };
 let qrScanner = null;
 let qrScanning = false;
 let lastScan = { code:'', time:0 };
 let sesiTimer = null;
 let rekapTimer = null;
+let riwayatTimer = null;
+let datetimeTimer = null;
 let izinFpData = [];
 let guruMapelList = [];
 let guruKelasList = [];
@@ -66,15 +69,10 @@ function closePopup() {
  * LOGIN POPUP
  *******************************************************/
 function showLoginPopup(hint) {
-  if (currentUser) {
-    showPopup('Anda sudah login sebagai ' + currentUser.user.nama, false, 2000);
-    return;
-  }
+  if (currentUser) { showPopup('Anda sudah login sebagai ' + currentUser.user.nama, false, 2000); return; }
   const modal = document.getElementById('loginModalOverlay');
   const sub = document.getElementById('loginModalSubtitle');
-  sub.textContent = hint === 'siswa'
-    ? 'Masukkan NISN Siswa (8-10 digit)'
-    : 'Masukkan NISN Siswa atau PIN Guru/Admin';
+  sub.textContent = hint === 'siswa' ? 'Masukkan NISN Siswa (8-10 digit)' : 'Masukkan NISN Siswa atau PIN Guru/Admin';
   modal.classList.remove('hidden');
   setTimeout(() => document.getElementById('loginInput').focus(), 200);
 }
@@ -84,7 +82,7 @@ function closeLoginPopup() {
 }
 
 /*******************************************************
- * API HELPER
+ * API
  *******************************************************/
 async function api(action, payload) {
   payload = payload || {};
@@ -97,17 +95,15 @@ async function api(action, payload) {
 }
 
 /*******************************************************
- * SESSION PERSISTENCE
+ * SESSION
  *******************************************************/
 function saveSession() {
   if (!currentUser) return localStorage.removeItem(LS_KEY);
   localStorage.setItem(LS_KEY, JSON.stringify({
-    role: currentUser.role,
-    user: currentUser.user,
+    role: currentUser.role, user: currentUser.user,
     hasFingerprint: currentUser.hasFingerprint,
     allowFingerprint: currentUser.allowFingerprint,
-    allowIzinSakit: currentUser.allowIzinSakit,
-    ts: Date.now()
+    allowIzinSakit: currentUser.allowIzinSakit, ts: Date.now()
   }));
 }
 function loadSession() {
@@ -124,18 +120,162 @@ function loadSession() {
  * INIT
  *******************************************************/
 window.addEventListener('DOMContentLoaded', async () => {
+  startClock();
   await muatFitur();
   await muatSesi();
+  await refreshStatusHariIni();
   const s = loadSession();
-  if (s) {
-    currentUser = s;
-    applyUserToUI();
-  }
+  if (s) { currentUser = s; applyUserToUI(); }
   showPage('dashboard');
   startSesiWatcher();
   startRekapWatcher();
+  startRiwayatWatcher();
   isiDropdownKelasCari();
 });
+
+/*******************************************************
+ * CLOCK (topbar)
+ *******************************************************/
+function startClock() {
+  const update = () => {
+    const el = document.getElementById('topbarDateTime');
+    if (!el) return;
+    const now = new Date();
+    const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][now.getDay()];
+    const bulan = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][now.getMonth()];
+    const tanggal = now.getDate();
+    const tahun = now.getFullYear();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    el.textContent = hari + ', ' + tanggal + ' ' + bulan + ' ' + tahun + ' || ' + hh + ':' + mm + ':' + ss;
+  };
+  update();
+  if (datetimeTimer) clearInterval(datetimeTimer);
+  datetimeTimer = setInterval(update, 1000);
+}
+
+/*******************************************************
+ * APPLY USER TO UI
+ *******************************************************/
+function applyUserToUI() {
+  const role = currentUser ? currentUser.role : null;
+  const nama = currentUser ? currentUser.user.nama : 'Belum Login';
+  document.getElementById('topbarUserName').textContent = nama;
+  document.getElementById('topbarSubtitle').textContent = role
+    ? ('Dashboard ' + role.charAt(0).toUpperCase() + role.slice(1) + (currentUser.user.nama ? ' — ' + currentUser.user.nama : ''))
+    : 'Dashboard';
+
+  const menus = ['menuFpSiswa','menuSyarat','menuQR','menuFpGuru','menuIzin','menuRekap','menuInputNilai','menuDaftarNilai','menuPengaturan'];
+  menus.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('disabled'); });
+
+  if (role === 'siswa') {
+    document.getElementById('menuFpSiswa').classList.remove('disabled');
+    document.getElementById('menuSyarat').classList.remove('disabled');
+    document.getElementById('menuLoginSiswa').style.display = 'none';
+    document.getElementById('menuLoginGuru').style.display = 'none';
+  } else if (role === 'guru') {
+    document.getElementById('menuQR').classList.remove('disabled');
+    document.getElementById('menuFpGuru').classList.remove('disabled');
+    document.getElementById('menuIzin').classList.remove('disabled');
+    document.getElementById('menuRekap').classList.remove('disabled');
+    document.getElementById('menuInputNilai').classList.remove('disabled');
+    document.getElementById('menuDaftarNilai').classList.remove('disabled');
+    document.getElementById('menuLoginSiswa').style.display = 'none';
+    document.getElementById('menuLoginGuru').style.display = 'none';
+    const optG = document.getElementById('izinRoleGuruOpt'); if (optG) optG.disabled = true;
+    const optRG = document.getElementById('rekapRoleGuruOpt'); if (optRG) optRG.disabled = true;
+  } else if (role === 'admin') {
+    document.getElementById('menuQR').classList.remove('disabled');
+    document.getElementById('menuIzin').classList.remove('disabled');
+    document.getElementById('menuRekap').classList.remove('disabled');
+    document.getElementById('menuInputNilai').classList.remove('disabled');
+    document.getElementById('menuDaftarNilai').classList.remove('disabled');
+    document.getElementById('menuPengaturan').classList.remove('disabled');
+    document.getElementById('menuLoginSiswa').style.display = 'none';
+    document.getElementById('menuLoginGuru').style.display = 'none';
+    const optG = document.getElementById('izinRoleGuruOpt'); if (optG) optG.disabled = false;
+    const optRG = document.getElementById('rekapRoleGuruOpt'); if (optRG) optRG.disabled = false;
+  } else {
+    document.getElementById('menuLoginSiswa').style.display = '';
+    document.getElementById('menuLoginGuru').style.display = '';
+  }
+  const adminBox = document.getElementById('adminScanTargetBox');
+  if (adminBox) adminBox.classList.toggle('hidden', role !== 'admin');
+
+  if (role === 'siswa') updateFingerprintButton('siswa');
+  if (role === 'guru') updateFingerprintButton('guru');
+}
+
+/*******************************************************
+ * PAGE ROUTER
+ *******************************************************/
+const PAGE_TITLES = {
+  dashboard:'Dashboard', cariSiswa:'Cari Data Siswa',
+  sidikJariSiswa:'Absensi Sidik Jari (Siswa)', syarat:'Cek Syarat Naik Kelas / Lulus',
+  qr:'QR Barcode Scanner', sidikJariGuru:'Absensi Sidik Jari (Guru)',
+  izin:'Input Izin / Sakit', rekap:'Rekap Absensi',
+  inputNilai:'Input Nilai', daftarNilai:'Daftar Nilai',
+  kelulusan:'Cek Kelulusan', pengaturan:'Pengaturan Sistem'
+};
+
+function showPage(pageId, el) {
+  if (!canAccessPage(pageId)) return;
+  document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById('page-' + pageId);
+  if (target) target.classList.remove('hidden');
+  document.getElementById('pageTitle').textContent = PAGE_TITLES[pageId] || pageId;
+  document.getElementById('pageBreadcrumb').textContent = PAGE_TITLES[pageId] || pageId;
+  document.querySelectorAll('.app-sidebar .nav-link').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  // Tutup sidebar otomatis (mobile)
+  if (window.innerWidth < 992) {
+    const sidebar = document.querySelector('.app-sidebar');
+    if (sidebar && sidebar.classList.contains('sidebar-open')) {
+      const toggle = document.querySelector('[data-lte-toggle="sidebar"]');
+      if (toggle) toggle.click();
+    }
+  }
+
+  if (pageId === 'dashboard') { muatRiwayat(); muatRekapRealtime(); refreshSesiAktif(); refreshStatusHariIni(); }
+  if (pageId === 'cariSiswa') { isiDropdownKelasCari(); }
+  if (pageId === 'sidikJariSiswa' || pageId === 'sidikJariGuru' || pageId === 'qr') { renderSesiBannerEls(); }
+  if (pageId === 'izin') { muatSesi(); }
+  if (pageId === 'inputNilai' || pageId === 'daftarNilai') { if (currentUser) initGuruNilai(); }
+  if (pageId === 'pengaturan') { adminLoadAll(); }
+}
+
+function canAccessPage(pageId) {
+  const role = currentUser ? currentUser.role : null;
+  const prot = {
+    sidikJariSiswa:['siswa'], syarat:['siswa'], qr:['guru','admin'],
+    sidikJariGuru:['guru'], izin:['guru','admin'], rekap:['guru','admin'],
+    inputNilai:['guru','admin'], daftarNilai:['guru','admin'], pengaturan:['admin']
+  };
+  if (prot[pageId]) {
+    if (!role || prot[pageId].indexOf(role) < 0) {
+      showPopup('Silakan login dulu dengan akun yang sesuai', false, 2000);
+      if (!role) showLoginPopup();
+      return false;
+    }
+  }
+  return true;
+}
+
+function guardMenu(role, target, el) {
+  if (!currentUser) { showLoginPopup(role); return; }
+  if (currentUser.role !== role && !(role === 'guru' && currentUser.role === 'admin')) {
+    showPopup('Anda login sebagai ' + currentUser.role + ', tidak bisa akses menu ini', false, 2000);
+    return;
+  }
+  const map = {
+    sidikJariSiswa:'sidikJariSiswa', syarat:'syarat', qr:'qr',
+    sidikJariGuru:'sidikJariGuru', izin:'izin', rekap:'rekap',
+    inputNilai:'inputNilai', daftarNilai:'daftarNilai', pengaturan:'pengaturan'
+  };
+  if (map[target]) showPage(map[target], el);
+}
 
 /*******************************************************
  * LOGIN / LOGOUT
@@ -157,19 +297,17 @@ async function doLogin() {
     applyUserToUI();
     await muatFitur();
     showPopup('Login Berhasil! Halo ' + r.user.nama, true, 1500);
-    // Redirect ke halaman sesuai role
     if (r.role === 'siswa') showPage('sidikJariSiswa');
     else if (r.role === 'guru') showPage('qr');
     else if (r.role === 'admin') showPage('pengaturan');
-  } catch(e) {
-    showPopup('Gagal koneksi: '+e.message, false, 2500);
-  }
+  } catch(e) { showPopup('Gagal koneksi: '+e.message, false, 2500); }
 }
 
 function doLogout() {
   qrTutupKamera();
   if (sesiTimer) clearInterval(sesiTimer);
   if (rekapTimer) clearInterval(rekapTimer);
+  if (riwayatTimer) clearInterval(riwayatTimer);
   currentUser = null;
   localStorage.removeItem(LS_KEY);
   applyUserToUI();
@@ -177,177 +315,14 @@ function doLogout() {
   showPage('dashboard');
   startSesiWatcher();
   startRekapWatcher();
-}
-
-/*******************************************************
- * APPLY USER TO UI (sidebar, topbar, menu state)
- *******************************************************/
-function applyUserToUI() {
-  const role = currentUser ? currentUser.role : null;
-  const nama = currentUser ? currentUser.user.nama : 'Belum Login';
-
-  // Topbar
-  document.getElementById('topbarUserName').textContent = nama;
-  document.getElementById('topbarSubtitle').textContent = role
-    ? ('Dashboard ' + role.charAt(0).toUpperCase() + role.slice(1))
-    : 'Dashboard';
-
-  // Reset semua menu disabled dulu
-  const menus = ['menuFpSiswa','menuSyarat','menuQR','menuFpGuru','menuIzin','menuRekap','menuInputNilai','menuDaftarNilai','menuPengaturan'];
-  menus.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('disabled');
-  });
-
-  // Enable sesuai role
-  if (role === 'siswa') {
-    document.getElementById('menuFpSiswa').classList.remove('disabled');
-    document.getElementById('menuSyarat').classList.remove('disabled');
-    document.getElementById('menuLoginSiswa').style.display = 'none';
-    document.getElementById('menuLoginGuru').style.display = 'none';
-  } else if (role === 'guru') {
-    document.getElementById('menuQR').classList.remove('disabled');
-    document.getElementById('menuFpGuru').classList.remove('disabled');
-    document.getElementById('menuIzin').classList.remove('disabled');
-    document.getElementById('menuRekap').classList.remove('disabled');
-    document.getElementById('menuInputNilai').classList.remove('disabled');
-    document.getElementById('menuDaftarNilai').classList.remove('disabled');
-    document.getElementById('menuLoginSiswa').style.display = 'none';
-    document.getElementById('menuLoginGuru').style.display = 'none';
-    // Sembunyikan opsi guru di izin & rekap
-    const optG = document.getElementById('izinRoleGuruOpt');
-    if (optG) optG.disabled = true;
-    const optRG = document.getElementById('rekapRoleGuruOpt');
-    if (optRG) optRG.disabled = true;
-  } else if (role === 'admin') {
-    document.getElementById('menuQR').classList.remove('disabled');
-    document.getElementById('menuIzin').classList.remove('disabled');
-    document.getElementById('menuRekap').classList.remove('disabled');
-    document.getElementById('menuInputNilai').classList.remove('disabled');
-    document.getElementById('menuDaftarNilai').classList.remove('disabled');
-    document.getElementById('menuPengaturan').classList.remove('disabled');
-    document.getElementById('menuLoginSiswa').style.display = 'none';
-    document.getElementById('menuLoginGuru').style.display = 'none';
-    // Enable opsi guru
-    const optG = document.getElementById('izinRoleGuruOpt');
-    if (optG) optG.disabled = false;
-    const optRG = document.getElementById('rekapRoleGuruOpt');
-    if (optRG) optRG.disabled = false;
-  } else {
-    // Belum login
-    document.getElementById('menuLoginSiswa').style.display = '';
-    document.getElementById('menuLoginGuru').style.display = '';
-  }
-
-  // Tampilkan target scan admin
-  const adminBox = document.getElementById('adminScanTargetBox');
-  if (adminBox) adminBox.classList.toggle('hidden', role !== 'admin');
-
-  // Update tombol fingerprint
-  if (role === 'siswa') updateFingerprintButton('siswa');
-  if (role === 'guru') updateFingerprintButton('guru');
-}
-
-/*******************************************************
- * PAGE ROUTER
- *******************************************************/
-const PAGE_TITLES = {
-  dashboard: 'Dashboard',
-  cariSiswa: 'Cari Data Siswa',
-  sidikJariSiswa: 'Absensi Sidik Jari (Siswa)',
-  syarat: 'Cek Syarat Naik Kelas / Lulus',
-  qr: 'QR Barcode Scanner',
-  sidikJariGuru: 'Absensi Sidik Jari (Guru)',
-  izin: 'Input Izin / Sakit',
-  rekap: 'Rekap Absensi',
-  inputNilai: 'Input Nilai',
-  daftarNilai: 'Daftar Nilai',
-  kelulusan: 'Cek Kelulusan',
-  pengaturan: 'Pengaturan Sistem'
-};
-
-function showPage(pageId) {
-  // Guard akses
-  if (!canAccessPage(pageId)) return;
-
-  // Hide all pages
-  document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
-  const target = document.getElementById('page-' + pageId);
-  if (target) target.classList.remove('hidden');
-
-  // Update title & breadcrumb
-  document.getElementById('pageTitle').textContent = PAGE_TITLES[pageId] || pageId;
-  document.getElementById('pageBreadcrumb').textContent = PAGE_TITLES[pageId] || pageId;
-
-  // Update sidebar active
-  document.querySelectorAll('.app-sidebar .nav-link').forEach(el => el.classList.remove('active'));
-  const clicked = Array.from(document.querySelectorAll('.app-sidebar .nav-link'))
-    .find(a => (a.getAttribute('onclick') || '').indexOf("'" + pageId + "'") >= 0);
-  if (clicked) clicked.classList.add('active');
-
-  // Trigger per-page init
-  if (pageId === 'dashboard') { muatRiwayat(); muatRekapRealtime(); refreshSesiAktif(); }
-  if (pageId === 'cariSiswa') { isiDropdownKelasCari(); }
-  if (pageId === 'sidikJariSiswa') { renderSesiBannerEls(); }
-  if (pageId === 'sidikJariGuru') { renderSesiBannerEls(); }
-  if (pageId === 'qr') { renderSesiBannerEls(); }
-  if (pageId === 'izin') { muatSesi(); }
-  if (pageId === 'inputNilai' || pageId === 'daftarNilai') { if (currentUser && (currentUser.role === 'guru' || currentUser.role === 'admin')) initGuruNilai(); }
-  if (pageId === 'pengaturan') { adminLoadAll(); }
-}
-
-function canAccessPage(pageId) {
-  const role = currentUser ? currentUser.role : null;
-  const protectedPages = {
-    sidikJariSiswa: ['siswa'],
-    syarat: ['siswa'],
-    qr: ['guru','admin'],
-    sidikJariGuru: ['guru'],
-    izin: ['guru','admin'],
-    rekap: ['guru','admin'],
-    inputNilai: ['guru','admin'],
-    daftarNilai: ['guru','admin'],
-    pengaturan: ['admin']
-  };
-  if (protectedPages[pageId]) {
-    if (!role || protectedPages[pageId].indexOf(role) < 0) {
-      showPopup('Silakan login dulu dengan akun yang sesuai', false, 2000);
-      if (!role) showLoginPopup();
-      return false;
-    }
-  }
-  return true;
-}
-
-function guardMenu(role, target) {
-  if (!currentUser) { showLoginPopup(role); return; }
-  if (currentUser.role !== role && !(role === 'guru' && currentUser.role === 'admin')) {
-    showPopup('Anda login sebagai ' + currentUser.role + ', tidak bisa akses menu ini', false, 2000);
-    return;
-  }
-  // Arahkan ke page yang sesuai
-  const map = {
-    sidikJariSiswa: 'sidikJariSiswa',
-    syarat: 'syarat',
-    qr: 'qr',
-    sidikJariGuru: 'sidikJariGuru',
-    izin: 'izin',
-    rekap: 'rekap',
-    inputNilai: 'inputNilai',
-    daftarNilai: 'daftarNilai',
-    pengaturan: 'pengaturan'
-  };
-  if (map[target]) showPage(map[target]);
+  startRiwayatWatcher();
 }
 
 /*******************************************************
  * FITUR
  *******************************************************/
 async function muatFitur() {
-  try {
-    const r = await api('getFitur');
-    if (r.ok) fiturGlobal = r.fitur;
-  } catch(e) {}
+  try { const r = await api('getFitur'); if (r.ok) fiturGlobal = r.fitur; } catch(e) {}
 }
 
 /*******************************************************
@@ -374,14 +349,30 @@ async function refreshSesiAktif() {
   } catch(e) {}
 }
 
+async function refreshStatusHariIni() {
+  try {
+    const r = await api('getStatusHariIni');
+    if (r.ok) statusHariIni = r;
+    renderSesiBannerEls();
+    handleRiwayatVisibility();
+  } catch(e) {}
+}
+
 function renderSesiBannerEls() {
-  // Render ke semua elemen banner sesi
   const ids = ['sesiBannerContainer','siswaSesiBanner','guruSesiBanner','guruFpSesiBanner'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (!currentSesiAktif) {
+    // Prioritas: hari libur > sesi aktif > tidak ada sesi
+    if (statusHariIni && statusHariIni.isLibur) {
       el.innerHTML = '<div class="sesi-banner err">' +
+        '<div class="label">Status Hari Ini</div>' +
+        '<div class="name">🏖️ ' + (statusHariIni.keteranganLibur || 'Hari Libur') + '</div>' +
+        '<div class="time">Selamat beristirahat — tidak ada absensi hari ini</div></div>';
+      return;
+    }
+    if (!currentSesiAktif) {
+      el.innerHTML = '<div class="sesi-banner warn">' +
         '<div class="label">Status Sesi</div>' +
         '<div class="name">Tidak Ada Sesi</div>' +
         '<div class="time">Saat ini tidak ada sesi berlangsung</div></div>';
@@ -390,7 +381,7 @@ function renderSesiBannerEls() {
     const s = currentSesiAktif.info;
     const st = currentSesiAktif.status;
     let cls = 'sesi-banner', tagText = '';
-    if (st === 'TW') { tagText = '🟢 Tepat Waktu'; }
+    if (st === 'TW') tagText = '🟢 Tepat Waktu';
     else if (st === 'TL') { cls += ' warn'; tagText = '🟡 Terlambat'; }
     else { cls += ' err'; tagText = '🔴 Ditutup'; }
     el.innerHTML = '<div class="' + cls + '">' +
@@ -404,12 +395,56 @@ function renderSesiBannerEls() {
 function startSesiWatcher() {
   if (sesiTimer) clearInterval(sesiTimer);
   refreshSesiAktif();
-  sesiTimer = setInterval(refreshSesiAktif, 30000);
+  refreshStatusHariIni();
+  sesiTimer = setInterval(() => { refreshSesiAktif(); refreshStatusHariIni(); }, 30000);
 }
 function startRekapWatcher() {
   if (rekapTimer) clearInterval(rekapTimer);
   muatRekapRealtime();
   rekapTimer = setInterval(muatRekapRealtime, 30000);
+}
+function startRiwayatWatcher() {
+  if (riwayatTimer) clearInterval(riwayatTimer);
+  handleRiwayatVisibility();
+  riwayatTimer = setInterval(handleRiwayatVisibility, 60000);
+}
+
+/**
+ * Auto-hide riwayat di jam 23:59 - buka saat sesi pertama mulai
+ */
+function handleRiwayatVisibility() {
+  const card = document.getElementById('riwayatCard');
+  const wrap = document.getElementById('riwayatTableWrap');
+  const closed = document.getElementById('riwayatClosedMsg');
+  if (!card) return;
+
+  // Sembunyikan jika:
+  // 1. Hari libur, atau
+  // 2. Belum ada sesi aktif DAN jam < sesi pertama mulai (mis. sebelum 06:30)
+  // 3. Setelah 23:59 (reset harian)
+
+  const now = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  // Cek sesi pertama
+  const sesiPertama = currentSesiList && currentSesiList[0];
+  const belumMulai = sesiPertama && hhmm < sesiPertama.mulaiTW;
+
+  const isLibur = statusHariIni && statusHariIni.isLibur;
+  const noSesi = !currentSesiAktif;
+
+  if (isLibur || (noSesi && belumMulai)) {
+    wrap.classList.add('hidden');
+    closed.classList.remove('hidden');
+    if (isLibur) {
+      closed.innerHTML = '<i class="bi bi-sun fs-4 d-block mb-1"></i><strong>Hari Libur</strong><br>Tidak ada absensi hari ini.';
+    } else {
+      closed.innerHTML = '<i class="bi bi-moon-stars fs-4 d-block mb-1"></i><strong>Sesi Belum Dimulai</strong><br>Belum ada riwayat saat ini.';
+    }
+  } else {
+    wrap.classList.remove('hidden');
+    closed.classList.add('hidden');
+  }
 }
 
 /*******************************************************
@@ -422,25 +457,22 @@ async function muatRekapRealtime() {
     const html = renderRekapHTML(r.sesi);
     const el = document.getElementById('rekapRealtimeContainer');
     if (el) el.innerHTML = html;
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
 function renderRekapHTML(sesiData) {
   if (!sesiData || !sesiData.length) return '<div class="text-muted small">Belum ada sesi.</div>';
-  let html = '<div class="rekap-card"><div class="rekap-title">📊 REKAP KEHADIRAN HARI INI</div>';
+  let html = '<div class="rekap-card"><div class="rekap-title">📊 REKAP HARI INI</div>';
   sesiData.forEach(s => {
-    html += '<div style="margin-bottom:14px;">';
+    html += '<div style="margin-bottom:10px;">';
     html += '<div class="rekap-sesi-title">' + s.sesi + '</div>';
     html += '<table class="rekap-table"><thead><tr><th>Peran</th><th>TW</th><th>TL</th><th>S</th><th>I</th><th>A</th><th>B</th><th>%</th></tr></thead><tbody>';
     const renderRow = (label, stat) => {
       const p = stat.persen;
       const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
       return '<tr><td>' + label + '</td>' +
-        '<td>' + (stat.TW || '-') + '</td>' +
-        '<td>' + (stat.TL || '-') + '</td>' +
-        '<td>' + (stat.S || '-') + '</td>' +
-        '<td>' + (stat.I || '-') + '</td>' +
-        '<td>' + (stat.A || '-') + '</td>' +
-        '<td>' + (stat.B || '-') + '</td>' +
+        '<td>' + (stat.TW || '-') + '</td><td>' + (stat.TL || '-') + '</td>' +
+        '<td>' + (stat.S || '-') + '</td><td>' + (stat.I || '-') + '</td>' +
+        '<td>' + (stat.A || '-') + '</td><td>' + (stat.B || '-') + '</td>' +
         '<td class="persen ' + cls + '">' + p + '%</td></tr>';
     };
     html += renderRow('Guru', s.guru);
@@ -452,7 +484,7 @@ function renderRekapHTML(sesiData) {
 }
 
 /*******************************************************
- * RIWAYAT GLOBAL (di dashboard)
+ * RIWAYAT GLOBAL (dashboard)
  *******************************************************/
 async function muatRiwayat() {
   try {
@@ -476,8 +508,7 @@ async function muatRiwayat() {
       let row = '<td>' + (i+1) + '</td><td>' + u.nama + '</td><td><span class="badge badge-role-' + u.role + '">' + u.role + '</span></td>';
       sesiList.forEach(s => {
         const info = u.sesi[s] || { status: '-', jam: '' };
-        let st = info.status;
-        let label = st;
+        let st = info.status, label = st;
         if (st === 'ALPA') label = 'A';
         else if (st === 'BOLOS') label = 'B';
         else if (st === 'BELUM' || st === '-') label = '—';
@@ -488,11 +519,11 @@ async function muatRiwayat() {
       tr.innerHTML = row;
       tbody.appendChild(tr);
     });
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
 
 /*******************************************************
- * CARI SISWA
+ * CARI SISWA (per periode)
  *******************************************************/
 async function isiDropdownKelasCari() {
   try {
@@ -509,20 +540,32 @@ async function isiDropdownKelasCari() {
 async function doCariSiswa() {
   const q = document.getElementById('cariSiswaInput').value.trim();
   const kelas = document.getElementById('cariSiswaKelas').value;
+  const dari = document.getElementById('cariSiswaDari').value;
+  const sampai = document.getElementById('cariSiswaSampai').value;
   const el = document.getElementById('cariSiswaHasil');
   el.innerHTML = '<div class="text-muted small">Mencari...</div>';
   try {
-    const r = await api('cariSiswa', { q: q, kelas: kelas });
-    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger">' + r.msg + '</div>'; return; }
-    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning">Tidak ada siswa yang cocok.</div>'; return; }
-    let html = '<table class="table table-sm table-striped"><thead><tr><th>No</th><th>NISN</th><th>Nama</th><th>Kelas</th></tr></thead><tbody>';
+    const r = await api('cariSiswa', { q: q, kelas: kelas, dari: dari, sampai: sampai });
+    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
+    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning small">Tidak ada siswa yang cocok.</div>'; return; }
+    let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr>' +
+      '<th>No</th><th>Nama</th><th>Tanggal</th>' +
+      '<th>TW</th><th>TL</th><th>S</th><th>I</th><th>A</th><th>B</th></tr></thead><tbody>';
     r.data.forEach((s, i) => {
-      html += '<tr><td>' + (i+1) + '</td><td>' + s.nisn + '</td><td>' + s.nama + '</td><td>' + s.kelas + '</td></tr>';
+      html += '<tr><td>' + (i+1) + '</td>' +
+        '<td><strong>' + s.nama + '</strong><br><small class="text-muted">' + s.nisn + ' • ' + s.kelas + '</small></td>' +
+        '<td><small>' + (s.periode || '-') + '</small></td>' +
+        '<td class="text-center">' + s.TW + '</td>' +
+        '<td class="text-center">' + s.TL + '</td>' +
+        '<td class="text-center">' + s.S + '</td>' +
+        '<td class="text-center">' + s.I + '</td>' +
+        '<td class="text-center text-danger">' + s.A + '</td>' +
+        '<td class="text-center text-danger">' + s.B + '</td></tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div class="alert alert-danger">Gagal: ' + e.message + '</div>';
+    el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>';
   }
 }
 
@@ -534,30 +577,21 @@ function updateFingerprintButton(who) {
   if (who === 'siswa') {
     const btn = document.getElementById('btnFingerprint');
     if (!btn) return;
-    btn.innerHTML = currentUser.hasFingerprint
-      ? '<i class="bi bi-fingerprint"></i> Absen Sidik Jari'
-      : '<i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari';
+    btn.innerHTML = currentUser.hasFingerprint ? '<i class="bi bi-fingerprint"></i> Absen Sidik Jari' : '<i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari';
   } else if (who === 'guru') {
     const btn = document.getElementById('guruBtnFingerprint');
     if (!btn) return;
-    btn.innerHTML = currentUser.hasFingerprint
-      ? '<i class="bi bi-fingerprint"></i> Absen Sidik Jari'
-      : '<i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari';
+    btn.innerHTML = currentUser.hasFingerprint ? '<i class="bi bi-fingerprint"></i> Absen Sidik Jari' : '<i class="bi bi-fingerprint"></i> Daftarkan Sidik Jari';
   }
 }
-function b64(buffer) {
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer)));
-}
+function b64(buffer) { return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer))); }
 
 async function handleFingerprint() {
   if (!currentUser || currentUser.role !== 'siswa') { showPopup('Login sebagai siswa dulu', false); return; }
   if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
   showLoading('Memeriksa izin...');
   const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
-  if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini. Hubungi admin.', false, 2500);
-    return;
-  }
+  if (!cek.ok || !cek.allowed) { showPopup('Anda tidak diizinkan absen sidik jari hari ini.', false, 2500); return; }
   const sesi = currentSesiAktif.sesi;
   if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
   try {
@@ -587,12 +621,8 @@ async function handleFingerprint() {
     } else {
       showLoading('Verifikasi sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({
-        publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' }
-      });
-      const r = await api('absenFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama, role: 'siswa', sesi: sesi
-      });
+      await navigator.credentials.get({ publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' } });
+      const r = await api('absenFingerprint', { id: currentUser.user.id, nama: currentUser.user.nama, role: 'siswa', sesi: sesi });
       showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
       if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); muatRekapRealtime(); }
     }
@@ -607,10 +637,7 @@ async function handleGuruFingerprint() {
   if (!currentSesiAktif) { showPopup('Tidak ada sesi berlangsung', false); return; }
   showLoading('Memeriksa izin...');
   const cek = await api('cekIzinFpUser', { id: currentUser.user.id });
-  if (!cek.ok || !cek.allowed) {
-    showPopup('Anda tidak diizinkan absen sidik jari hari ini.', false, 2500);
-    return;
-  }
+  if (!cek.ok || !cek.allowed) { showPopup('Anda tidak diizinkan absen sidik jari hari ini.', false, 2500); return; }
   const sesi = currentSesiAktif.sesi;
   if (!window.PublicKeyCredential) { showPopup('HP tidak mendukung sidik jari', false); return; }
   try {
@@ -640,12 +667,8 @@ async function handleGuruFingerprint() {
     } else {
       showLoading('Verifikasi sidik jari...');
       const challenge = crypto.getRandomValues(new Uint8Array(32));
-      await navigator.credentials.get({
-        publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' }
-      });
-      const r = await api('absenFingerprint', {
-        id: currentUser.user.id, nama: currentUser.user.nama, role: 'guru', sesi: sesi
-      });
+      await navigator.credentials.get({ publicKey: { challenge: challenge, timeout: 60000, userVerification: 'required' } });
+      const r = await api('absenFingerprint', { id: currentUser.user.id, nama: currentUser.user.nama, role: 'guru', sesi: sesi });
       showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
       if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); muatRekapRealtime(); }
     }
@@ -656,9 +679,8 @@ async function handleGuruFingerprint() {
 }
 
 /*******************************************************
- * QR SCANNER (Guru & Admin)
+ * QR SCANNER
  *******************************************************/
-function onAdminTargetChange() {}
 function onQRModeChange() {
   const mode = document.getElementById('qrModeScan').value;
   const manual = mode === 'manual';
@@ -677,10 +699,7 @@ async function qrBukaKamera() {
       txt => onQRScanSuccess(txt), () => {}
     );
     document.getElementById('qrBtnBuka').disabled = true;
-  } catch(e) {
-    qrScanning = false;
-    showPopup('Gagal buka kamera: '+e.message, false);
-  }
+  } catch(e) { qrScanning = false; showPopup('Gagal buka kamera: '+e.message, false); }
 }
 async function qrTutupKamera() {
   if (qrScanner && qrScanning) {
@@ -701,10 +720,8 @@ async function qrProsesScan(barcode) {
   showLoading('Memproses absensi...');
   try {
     const r = await api('scan', {
-      scannerRole: currentUser.role,
-      scannerId: currentUser.user.id,
-      barcode: String(barcode),
-      sesi: currentSesiAktif.sesi
+      scannerRole: currentUser.role, scannerId: currentUser.user.id,
+      barcode: String(barcode), sesi: currentSesiAktif.sesi
     });
     showPopup(r.msg, r.ok, r.ok ? 1200 : 2200);
     if (r.ok) { if (navigator.vibrate) navigator.vibrate(200); muatRiwayat(); muatRekapRealtime(); }
@@ -727,16 +744,13 @@ async function simpanIzin() {
   const sesi = document.getElementById('izinSesiSelect').value;
   const ket = document.getElementById('izinKet').value;
   if (!id || !nama || !sesi) { showPopup('ID, Nama, dan Sesi wajib diisi', false); return; }
-  if (currentUser.role === 'guru' && role === 'guru') {
-    showPopup('Guru tidak bisa input izin guru', false); return;
-  }
+  if (currentUser.role === 'guru' && role === 'guru') { showPopup('Guru tidak bisa input izin guru', false); return; }
   showLoading('Menyimpan izin...');
   const r = await api('simpanIzin', { role: role, id: id, nama: nama, sesi: sesi, keterangan: ket });
   if (r.ok) {
     document.getElementById('izinId').value = '';
     document.getElementById('izinNama').value = '';
-    muatRiwayat();
-    muatRekapRealtime();
+    muatRiwayat(); muatRekapRealtime();
   }
   showPopup(r.msg, r.ok);
 }
@@ -749,19 +763,15 @@ async function muatRekapPeriode() {
   const sampai = document.getElementById('rekapSampai').value;
   const role = document.getElementById('rekapRole').value;
   if (!dari || !sampai) { showPopup('Isi tanggal dari & sampai', false); return; }
-  if (currentUser.role === 'guru' && role === 'guru') {
-    showPopup('Guru tidak bisa lihat rekap guru', false); return;
-  }
+  if (currentUser.role === 'guru' && role === 'guru') { showPopup('Guru tidak bisa lihat rekap guru', false); return; }
   const el = document.getElementById('rekapPeriodeHasil');
   el.innerHTML = '<div class="text-muted small">Memuat...</div>';
   try {
     const r = await api('rekapPeriode', { dari: dari, sampai: sampai, role: role });
-    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger">' + r.msg + '</div>'; return; }
-    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning">Tidak ada data untuk periode ini.</div>'; return; }
-
-    // Render tabel: No, Nama, Total TW, TL, I, S, A, B, % Hadir
-    let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr>' +
-      '<th>No</th><th>Nama</th><th>TW</th><th>TL</th><th>I</th><th>S</th><th>A</th><th>B</th><th>% Hadir</th>' +
+    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
+    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning small">Tidak ada data.</div>'; return; }
+    let html = '<table class="table table-sm table-striped"><thead><tr>' +
+      '<th>No</th><th>Nama</th><th>TW</th><th>TL</th><th>I</th><th>S</th><th>A</th><th>B</th><th>%</th>' +
       '</tr></thead><tbody>';
     r.data.forEach((u, i) => {
       const p = u.persen;
@@ -772,11 +782,9 @@ async function muatRekapPeriode() {
         '<td>' + u.ALPA + '</td><td>' + u.BOLOS + '</td>' +
         '<td class="' + cls + '">' + p + '%</td></tr>';
     });
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
     el.innerHTML = html;
-  } catch(e) {
-    el.innerHTML = '<div class="alert alert-danger">Gagal: ' + e.message + '</div>';
-  }
+  } catch(e) { el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>'; }
 }
 
 /*******************************************************
@@ -784,7 +792,7 @@ async function muatRekapPeriode() {
  *******************************************************/
 async function cekSyaratSaya() {
   if (!currentUser || currentUser.role !== 'siswa') { showPopup('Login sebagai siswa dulu', false); return; }
-  showLoading('Menghitung akumulasi kehadiran...');
+  showLoading('Menghitung...');
   try {
     const r = await api('cekSyaratKelas', { nisn: currentUser.user.id });
     if (!r.ok) { showPopup(r.msg, false); return; }
@@ -793,23 +801,22 @@ async function cekSyaratSaya() {
     const color = ok ? '#22c55e' : '#ef4444';
     const bgColor = ok ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.12)';
     document.getElementById('syaratHasil').innerHTML =
-      '<div style="background:' + bgColor + ';border-left:4px solid ' + color + ';padding:14px;border-radius:8px;">' +
-        '<div style="font-size:1.15rem;font-weight:700;color:' + color + ';margin-bottom:6px;">' +
+      '<div style="background:' + bgColor + ';border-left:4px solid ' + color + ';padding:10px;border-radius:8px;">' +
+        '<div style="font-size:.95rem;font-weight:700;color:' + color + ';margin-bottom:4px;">' +
           (ok ? '✅' : '❌') + ' ' + r.pesan +
         '</div>' +
-        '<div style="font-size:.9rem;">Persentase Kehadiran: <strong style="color:' + color + '">' + s.persen + '%</strong> (minimal 80%)</div>' +
+        '<div style="font-size:.8rem;">Kehadiran: <strong style="color:' + color + '">' + s.persen + '%</strong> (min 80%)</div>' +
       '</div>' +
-      '<div class="small text-muted mt-2">📅 Periode: <strong>' + r.periode.mulai + '</strong> s/d <strong>' + r.periode.akhir + '</strong></div>' +
-      '<table class="table table-sm mt-3">' +
-        '<tr><td>Total Hari Sekolah</td><td class="text-end"><strong>' + s.totalHariSekolah + ' hari</strong></td></tr>' +
-        '<tr><td>Total Sesi Efektif</td><td class="text-end"><strong>' + s.totalSesiEfektif + ' sesi</strong></td></tr>' +
+      '<div class="small text-muted mt-2" style="font-size:.7rem;">📅 ' + r.periode.mulai + ' s/d ' + r.periode.akhir + '</div>' +
+      '<table class="table table-sm mt-2" style="font-size:.75rem;">' +
+        '<tr><td>Hari sekolah</td><td class="text-end"><strong>' + s.totalHariSekolah + '</strong></td></tr>' +
+        '<tr><td>Sesi efektif</td><td class="text-end"><strong>' + s.totalSesiEfektif + '</strong></td></tr>' +
         '<tr><td>✅ TW</td><td class="text-end"><strong>' + s.hadirTW + '</strong></td></tr>' +
         '<tr><td>🟡 TL</td><td class="text-end"><strong>' + s.hadirTL + '</strong></td></tr>' +
         '<tr><td>📝 Izin</td><td class="text-end"><strong>' + s.izin + '</strong></td></tr>' +
         '<tr><td>🤒 Sakit</td><td class="text-end"><strong>' + s.sakit + '</strong></td></tr>' +
         '<tr><td>❌ Alpa</td><td class="text-end"><strong class="text-danger">' + s.alpa + '</strong></td></tr>' +
         '<tr><td>🚫 Bolos</td><td class="text-end"><strong class="text-danger">' + s.bolos + '</strong></td></tr>' +
-        '<tr style="border-top:2px solid #cbd5e1;"><td><strong>Total Hadir</strong></td><td class="text-end"><strong>' + s.totalHadir + '</strong></td></tr>' +
       '</table>';
     closePopup();
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
@@ -837,19 +844,15 @@ async function initGuruNilai() {
     guruKelasList = kelasList;
     ['inputMapel','daftarMapel'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = mapelList.length
-        ? mapelList.map(m => '<option value="' + m + '">' + m + '</option>').join('')
-        : '<option value="">(Belum ada mapel)</option>';
+      if (el) el.innerHTML = mapelList.length ? mapelList.map(m => '<option value="' + m + '">' + m + '</option>').join('') : '<option value="">(Belum ada)</option>';
     });
     ['inputKelas','daftarKelas'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = kelasList.length
-        ? kelasList.map(k => '<option value="' + k + '">' + k + '</option>').join('')
-        : '<option value="">(Belum ada kelas)</option>';
+      if (el) el.innerHTML = kelasList.length ? kelasList.map(k => '<option value="' + k + '">' + k + '</option>').join('') : '<option value="">(Belum ada)</option>';
     });
     loadSiswaUntukInput();
     loadDaftarNilai();
-  } catch(e) { console.error(e); }
+  } catch(e) {}
 }
 
 async function loadSiswaUntukInput() {
@@ -857,14 +860,11 @@ async function loadSiswaUntukInput() {
   const body = document.getElementById('inputNilaiBody');
   if (!kelas) { body.innerHTML = '<div class="text-muted small">Pilih kelas dulu.</div>'; return; }
   const r = await api('getSiswaByKelas', { kelas: kelas });
-  if (!r.ok || !r.data.length) {
-    body.innerHTML = '<div class="text-muted small">Tidak ada siswa di kelas ini.</div>';
-    return;
-  }
+  if (!r.ok || !r.data.length) { body.innerHTML = '<div class="text-muted small">Tidak ada siswa.</div>'; return; }
   currentSiswaInput = r.data;
-  let html = '<div style="overflow:auto;max-height:400px;"><table class="table table-sm"><thead><tr><th style="width:40px">No</th><th>Nama Siswa</th><th style="width:100px">Nilai</th></tr></thead><tbody>';
+  let html = '<div class="table-wrap" style="max-height:400px;"><table class="table table-sm"><thead><tr><th style="width:36px">No</th><th>Nama</th><th style="width:90px">Nilai</th></tr></thead><tbody>';
   r.data.forEach((s, i) => {
-    html += '<tr><td>' + (i+1) + '</td><td>' + s.nama + '<br><small class="text-muted">' + s.nisn + '</small></td>' +
+    html += '<tr><td>' + (i+1) + '</td><td><span style="font-size:.82rem">' + s.nama + '</span><br><small class="text-muted">' + s.nisn + '</small></td>' +
       '<td><input type="number" class="form-control form-control-sm nilai-input" data-nisn="' + s.nisn + '" placeholder="0" min="0" max="100"></td></tr>';
   });
   html += '</tbody></table></div>';
@@ -887,7 +887,7 @@ async function simpanNilaiMassal() {
       data.push({ nisn: nisn, nama: s ? s.nama : '', nilai: nilai });
     }
   });
-  if (!data.length) { showPopup('Belum ada nilai yang diisi', false); return; }
+  if (!data.length) { showPopup('Belum ada nilai', false); return; }
   showLoading('Menyimpan ' + data.length + ' nilai...');
   try {
     const r = await api('simpanNilai', {
@@ -904,14 +904,14 @@ async function loadDaftarNilai() {
   const kelas = document.getElementById('daftarKelas').value;
   const el = document.getElementById('daftarNilaiHasil');
   if (!mapel || !kelas) { el.innerHTML = '<div class="text-muted small">Pilih mapel & kelas.</div>'; return; }
-  showLoading('Memuat daftar nilai...');
+  showLoading('Memuat...');
   try {
     const r = await api('getDaftarNilai', { mapel: mapel, kelas: kelas });
     closePopup();
     if (!r.ok) { showPopup(r.msg, false); return; }
     if (!r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada siswa.</div>'; return; }
-    if (!r.jenis.length) { el.innerHTML = '<div class="text-muted small">Belum ada nilai untuk mapel & kelas ini.</div>'; return; }
-    let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr><th>No</th><th>Nama</th>';
+    if (!r.jenis.length) { el.innerHTML = '<div class="text-muted small">Belum ada nilai.</div>'; return; }
+    let html = '<table class="table table-sm table-striped" style="font-size:.78rem;"><thead><tr><th>No</th><th>Nama</th>';
     r.jenis.forEach(j => { html += '<th class="text-center">' + j + '</th>'; });
     html += '</tr></thead><tbody>';
     r.data.forEach((s, i) => {
@@ -922,7 +922,7 @@ async function loadDaftarNilai() {
       });
       html += '</tr>';
     });
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
@@ -937,32 +937,51 @@ async function cekKelulusan() {
   el.innerHTML = '<div class="text-muted small">Memeriksa...</div>';
   try {
     const r = await api('cekSyaratKelas', { nisn: nisn });
-    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger">' + r.msg + '</div>'; return; }
+    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
     const s = r.stat;
     const ok = r.memenuhi;
     const color = ok ? '#22c55e' : '#ef4444';
     const bgColor = ok ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.12)';
     el.innerHTML =
-      '<div style="background:' + bgColor + ';border-left:4px solid ' + color + ';padding:14px;border-radius:8px;">' +
-        '<div style="font-weight:700;font-size:.95rem;">' + r.siswa.nama + ' (' + r.siswa.kelas + ')</div>' +
-        '<div style="font-size:1.15rem;font-weight:700;color:' + color + ';margin-top:6px;">' +
-          (ok ? '✅' : '❌') + ' ' + r.pesan +
-        '</div>' +
-        '<div style="font-size:.9rem;">Persentase: <strong style="color:' + color + '">' + s.persen + '%</strong></div>' +
+      '<div style="background:' + bgColor + ';border-left:4px solid ' + color + ';padding:12px;border-radius:8px;">' +
+        '<div style="font-weight:700;">' + r.siswa.nama + ' (' + r.siswa.kelas + ')</div>' +
+        '<div style="font-size:1rem;font-weight:700;color:' + color + ';margin-top:6px;">' + (ok ? '✅' : '❌') + ' ' + r.pesan + '</div>' +
+        '<div style="font-size:.85rem;">Persentase: <strong>' + s.persen + '%</strong></div>' +
       '</div>' +
-      '<table class="table table-sm mt-3">' +
-        '<tr><td>Total Hari</td><td class="text-end">' + s.totalHariSekolah + '</td></tr>' +
-        '<tr><td>Total Sesi</td><td class="text-end">' + s.totalSesiEfektif + '</td></tr>' +
+      '<table class="table table-sm mt-2" style="font-size:.78rem;">' +
+        '<tr><td>Hari sekolah</td><td class="text-end">' + s.totalHariSekolah + '</td></tr>' +
+        '<tr><td>Total sesi</td><td class="text-end">' + s.totalSesiEfektif + '</td></tr>' +
         '<tr><td>TW / TL</td><td class="text-end">' + s.hadirTW + ' / ' + s.hadirTL + '</td></tr>' +
         '<tr><td>Izin / Sakit</td><td class="text-end">' + s.izin + ' / ' + s.sakit + '</td></tr>' +
         '<tr><td>Alpa / Bolos</td><td class="text-end text-danger"><strong>' + s.alpa + ' / ' + s.bolos + '</strong></td></tr>' +
       '</table>';
-  } catch(e) { el.innerHTML = '<div class="alert alert-danger">Gagal: ' + e.message + '</div>'; }
+  } catch(e) { el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>'; }
 }
 
 /*******************************************************
  * ADMIN - PENGATURAN
  *******************************************************/
+function toggleAccordion(id) {
+  const el = document.getElementById(id);
+  const header = el.previousElementSibling;
+  if (!el) return;
+  const isOpen = el.classList.contains('open');
+  if (isOpen) {
+    el.classList.remove('open');
+    if (header) header.classList.remove('open');
+  } else {
+    el.classList.add('open');
+    if (header) header.classList.add('open');
+    // Load data saat dibuka
+    if (id === 'acc-sesi') renderSesiList();
+    if (id === 'acc-libur') adminLoadLibur();
+    if (id === 'acc-izinfp') adminLoadIzinFp();
+    if (id === 'acc-user') { adminLoadUsers(); adminLoadFp(); }
+    if (id === 'acc-fitur') adminLoadFitur();
+    if (id === 'acc-historis') muatHistoris();
+  }
+}
+
 function adminLoadAll() {
   renderSesiList();
   adminLoadLibur();
@@ -981,9 +1000,9 @@ function renderSesiList() {
   if (!el) return;
   if (!currentSesiList.length) { el.innerHTML = '<div class="text-muted small">Belum ada sesi.</div>'; return; }
   el.innerHTML = currentSesiList.map(s =>
-    '<div class="d-flex justify-content-between align-items-center border-bottom py-2">' +
-      '<div><strong>' + s.sesi + '</strong><br><small class="text-muted">TW ' + s.mulaiTW + '-' + s.batasTW + ' | TL ' + s.batasTW + '-' + s.batasTL + '</small></div>' +
-      '<button class="btn btn-danger btn-sm" onclick="adminHapusSesi(\'' + s.sesi + '\')"><i class="bi bi-trash"></i></button>' +
+    '<div class="d-flex justify-content-between align-items-center border-bottom py-1">' +
+      '<div><strong style="font-size:.85rem">' + s.sesi + '</strong><br><small class="text-muted">TW ' + s.mulaiTW + '-' + s.batasTW + ' | TL ' + s.batasTW + '-' + s.batasTL + '</small></div>' +
+      '<button class="btn btn-danger btn-sm py-0 px-2" onclick="adminHapusSesi(\'' + s.sesi + '\')"><i class="bi bi-trash"></i></button>' +
     '</div>'
   ).join('');
 }
@@ -1015,7 +1034,7 @@ async function adminSimpanLibur() {
   if (!tanggal || !keterangan) { showPopup('Tanggal & keterangan wajib', false); return; }
   showLoading('Menyimpan...');
   const r = await api('simpanLibur', { tanggal: tanggal, keterangan: keterangan });
-  if (r.ok) { document.getElementById('liburKet').value = ''; adminLoadLibur(); }
+  if (r.ok) { document.getElementById('liburKet').value = ''; adminLoadLibur(); refreshStatusHariIni(); }
   showPopup(r.msg, r.ok);
 }
 async function adminLoadLibur() {
@@ -1026,7 +1045,7 @@ async function adminLoadLibur() {
   el.innerHTML = r.data.map(l =>
     '<div class="d-flex justify-content-between align-items-center border-bottom py-1">' +
       '<div><small>' + l.tanggal + ' — ' + l.keterangan + '</small></div>' +
-      '<button class="btn btn-danger btn-sm" onclick="adminHapusLibur(\'' + l.tanggal + '\')"><i class="bi bi-trash"></i></button>' +
+      '<button class="btn btn-danger btn-sm py-0 px-2" onclick="adminHapusLibur(\'' + l.tanggal + '\')"><i class="bi bi-trash"></i></button>' +
     '</div>'
   ).join('');
 }
@@ -1034,15 +1053,15 @@ async function adminHapusLibur(tanggal) {
   if (!confirm('Hapus libur ' + tanggal + '?')) return;
   showLoading('Menghapus...');
   const r = await api('hapusLibur', { tanggal: tanggal });
-  if (r.ok) adminLoadLibur();
+  if (r.ok) { adminLoadLibur(); refreshStatusHariIni(); }
   showPopup(r.msg, r.ok);
 }
 
 /*******************************************************
- * ADMIN - IZIN FINGERPRINT
+ * ADMIN - IZIN FP
  *******************************************************/
 async function adminLoadIzinFp() {
-  showLoading('Memuat daftar user...');
+  showLoading('Memuat...');
   try {
     const r = await api('listIzinFpAll');
     closePopup();
@@ -1061,22 +1080,18 @@ function renderIzinFpList() {
   if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
   if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
   if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
-  if (search) list = list.filter(u =>
-    String(u.nama).toLowerCase().indexOf(search) >= 0 ||
-    String(u.id).toLowerCase().indexOf(search) >= 0
-  );
+  if (search) list = list.filter(u => String(u.nama).toLowerCase().indexOf(search) >= 0 || String(u.id).toLowerCase().indexOf(search) >= 0);
   const totalOn = izinFpData.filter(u => u.allowed).length;
   document.getElementById('izinFpCount').textContent = list.length;
   document.getElementById('izinFpCountOn').textContent = totalOn;
-  if (!list.length) { el.innerHTML = '<div class="text-muted small p-3 text-center">Tidak ada user sesuai filter.</div>'; return; }
+  if (!list.length) { el.innerHTML = '<div class="text-muted small p-3 text-center">Tidak ada user.</div>'; return; }
   el.innerHTML = list.map(u => {
     const alasan = u.allowed && u.alasan ? '<div class="small text-success">📌 ' + u.alasan + '</div>' : '';
     return '<div class="switch-row">' +
       '<div style="flex:1;min-width:0;">' +
-        '<div class="label">' + u.nama + '</div>' +
-        '<div class="desc">' + u.id + ' • ' + u.role + ' ' + (u.extra || '') + '</div>' +
-        alasan +
-      '</div>' +
+        '<div class="label" style="font-size:.85rem">' + u.nama + '</div>' +
+        '<div class="desc" style="font-size:.7rem">' + u.id + ' • ' + u.role + ' ' + (u.extra || '') + '</div>' +
+        alasan + '</div>' +
       '<label class="switch"><input type="checkbox" ' + (u.allowed ? 'checked' : '') +
              ' onchange="adminToggleIzinFp(\'' + u.id + '\', this.checked)"><span class="slider"></span></label>' +
     '</div>';
@@ -1087,12 +1102,11 @@ async function adminToggleIzinFp(id, allowed) {
   if (!user) return;
   let alasan = 'Izin khusus';
   if (allowed) {
-    const input = prompt('Beri izin sidik jari untuk ' + user.nama + '.\nAlasan:', 'Kegiatan khusus');
+    const input = prompt('Beri izin untuk ' + user.nama + '.\nAlasan:', 'Kegiatan khusus');
     if (input === null) { renderIzinFpList(); return; }
     alasan = input.trim() || 'Izin khusus';
   }
-  user.allowed = allowed;
-  user.alasan = allowed ? alasan : '';
+  user.allowed = allowed; user.alasan = allowed ? alasan : '';
   renderIzinFpList();
   try {
     const r = allowed
@@ -1110,10 +1124,7 @@ async function adminBulkIzinFp(allowed) {
   if (filterRole !== 'all') list = list.filter(u => u.role === filterRole);
   if (filterStatus === 'allowed') list = list.filter(u => u.allowed);
   if (filterStatus === 'denied')  list = list.filter(u => !u.allowed);
-  if (search) list = list.filter(u =>
-    String(u.nama).toLowerCase().indexOf(search) >= 0 ||
-    String(u.id).toLowerCase().indexOf(search) >= 0
-  );
+  if (search) list = list.filter(u => String(u.nama).toLowerCase().indexOf(search) >= 0 || String(u.id).toLowerCase().indexOf(search) >= 0);
   const target = allowed ? list.filter(u => !u.allowed) : list.filter(u => u.allowed);
   if (!target.length) { showPopup('Tidak ada user yang perlu diubah', false, 1500); return; }
   if (!confirm((allowed ? 'IZINKAN' : 'TOLAK') + ' sidik jari untuk ' + target.length + ' user?')) return;
@@ -1141,9 +1152,9 @@ async function adminLoadUsers() {
   if (!el) return;
   if (!r.ok || !r.data.length) { el.innerHTML = '<div class="text-muted small">Tidak ada user.</div>'; return; }
   el.innerHTML = r.data.map(u =>
-    '<div class="d-flex justify-content-between align-items-center border-bottom py-2">' +
-      '<div><strong>' + u.nama + '</strong><br><small class="text-muted">' + u.id + ' • ' + u.role + '</small></div>' +
-      '<button class="btn btn-secondary btn-sm" onclick="adminResetPin(\'' + u.id + '\',\'' + u.nama + '\')"><i class="bi bi-key"></i> PIN</button>' +
+    '<div class="d-flex justify-content-between align-items-center border-bottom py-1">' +
+      '<div><strong style="font-size:.85rem">' + u.nama + '</strong><br><small class="text-muted">' + u.id + ' • ' + u.role + '</small></div>' +
+      '<button class="btn btn-secondary btn-sm py-0 px-2" onclick="adminResetPin(\'' + u.id + '\',\'' + u.nama + '\')"><i class="bi bi-key"></i></button>' +
     '</div>'
   ).join('');
 }
@@ -1159,11 +1170,11 @@ async function adminLoadFp() {
   const r = await api('listFingerprint');
   const el = document.getElementById('fpList');
   if (!el) return;
-  if (!r.ok || !r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada sidik jari terdaftar.</div>'; return; }
+  if (!r.ok || !r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada sidik jari.</div>'; return; }
   el.innerHTML = r.data.map(f =>
-    '<div class="d-flex justify-content-between align-items-center border-bottom py-2">' +
-      '<div><strong>' + f.nama + '</strong><br><small class="text-muted">' + f.id + ' • ' + f.role + '</small></div>' +
-      '<button class="btn btn-danger btn-sm" onclick="adminResetFp(\'' + f.id + '\',\'' + f.nama + '\')"><i class="bi bi-trash"></i> Reset</button>' +
+    '<div class="d-flex justify-content-between align-items-center border-bottom py-1">' +
+      '<div><strong style="font-size:.85rem">' + f.nama + '</strong><br><small class="text-muted">' + f.id + ' • ' + f.role + '</small></div>' +
+      '<button class="btn btn-danger btn-sm py-0 px-2" onclick="adminResetFp(\'' + f.id + '\',\'' + f.nama + '\')"><i class="bi bi-trash"></i></button>' +
     '</div>'
   ).join('');
 }
@@ -1182,14 +1193,14 @@ async function adminLoadFitur() {
   const r = await api('getFitur');
   if (!r.ok) return;
   fiturGlobal = r.fitur;
-  const el1 = document.getElementById('fitIzinSiswa');
-  const el2 = document.getElementById('fitIzinGuru');
-  const el3 = document.getElementById('fitTglMulai');
-  const el4 = document.getElementById('fitTglAkhir');
-  if (el1) el1.checked = fiturGlobal.izinIzinSakitSiswa === 'YA';
-  if (el2) el2.checked = fiturGlobal.izinIzinSakitGuru === 'YA';
-  if (el3) el3.value = fiturGlobal.tanggalMulaiHitung || '';
-  if (el4) el4.value = fiturGlobal.tanggalAkhirHitung || '';
+  const e1 = document.getElementById('fitIzinSiswa');
+  const e2 = document.getElementById('fitIzinGuru');
+  const e3 = document.getElementById('fitTglMulai');
+  const e4 = document.getElementById('fitTglAkhir');
+  if (e1) e1.checked = fiturGlobal.izinIzinSakitSiswa === 'YA';
+  if (e2) e2.checked = fiturGlobal.izinIzinSakitGuru === 'YA';
+  if (e3) e3.value = fiturGlobal.tanggalMulaiHitung || '';
+  if (e4) e4.value = fiturGlobal.tanggalAkhirHitung || '';
 }
 async function adminSetFitur() {
   const updates = {
@@ -1198,14 +1209,14 @@ async function adminSetFitur() {
     tanggalMulaiHitung: document.getElementById('fitTglMulai').value || '',
     tanggalAkhirHitung: document.getElementById('fitTglAkhir').value || ''
   };
-  showLoading('Menyimpan pengaturan...');
+  showLoading('Menyimpan...');
   const r = await api('setFitur', { fitur: updates });
   if (r.ok) fiturGlobal = Object.assign(fiturGlobal, updates);
   showPopup(r.msg, r.ok);
 }
 
 /*******************************************************
- * ADMIN - HISTORIS
+ * ADMIN - HISTORIS & ARSIP
  *******************************************************/
 async function muatHistoris() {
   const el = document.getElementById('historisHasil');
@@ -1213,19 +1224,42 @@ async function muatHistoris() {
   el.innerHTML = '<div class="text-muted small">Memuat...</div>';
   try {
     const r = await api('historis');
-    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger">' + r.msg + '</div>'; return; }
+    if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
     if (!r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada aktivitas.</div>'; return; }
-    let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr>' +
+    let html = '<table class="table table-sm table-striped" style="font-size:.75rem;"><thead><tr>' +
       '<th>Waktu</th><th>Aksi</th><th>Oleh</th><th>Detail</th></tr></thead><tbody>';
-    r.data.slice(0, 100).forEach(h => {
+    r.data.slice(0, 50).forEach(h => {
       html += '<tr><td><small>' + h.timestamp + '</small></td>' +
         '<td><span class="badge bg-info">' + h.aksi + '</span></td>' +
-        '<td>' + h.oleh + '</td>' +
+        '<td><small>' + h.oleh + '</small></td>' +
         '<td><small>' + h.detail + '</small></td></tr>';
     });
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = '<div class="alert alert-danger">Gagal: ' + e.message + '</div>'; }
+  } catch(e) { el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>'; }
+}
+
+async function adminArsipManual() {
+  if (!confirm('Arsip data kehadiran lama ke sheet Historis?\nData hari ini tetap di sheet Kehadiran.\n\nLanjutkan?')) return;
+  showLoading('Mengarsipkan data...');
+  try {
+    const r = await api('arsipManual');
+    showPopup(r.msg, r.ok, 3000);
+    if (r.ok) { muatHistoris(); muatRekapRealtime(); }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
+}
+
+async function adminPasangTrigger() {
+  if (!confirm('Pasang trigger arsip otomatis?\nData akan diarsip setiap 2 hari sekali jam 23:59.')) return;
+  showLoading('Memasang trigger...');
+  try {
+    const r = await api('pasangTrigger');
+    showPopup(r.msg, r.ok, 3000);
+    if (r.ok) {
+      const info = document.getElementById('infoArsip');
+      if (info) info.innerHTML = '✅ Trigger: <strong>aktif</strong> — arsip otomatis setiap 2 hari jam 23:59.';
+    }
+  } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
 }
 
 /*******************************************************
@@ -1240,7 +1274,5 @@ document.addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/\D/g,'');
   }
 });
-// Klik di luar login modal = tutup
-document.getElementById('loginModalOverlay').addEventListener('click', (e) => {
-  if (e.target.id === 'loginModalOverlay') closeLoginPopup();
-});
+const lm = document.getElementById('loginModalOverlay');
+if (lm) lm.addEventListener('click', (e) => { if (e.target.id === 'loginModalOverlay') closeLoginPopup(); });
