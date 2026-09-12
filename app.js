@@ -256,31 +256,45 @@ const PAGE_TITLES = {
 
 function showPage(pageId, el) {
   if (!canAccessPage(pageId)) return;
-  document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+
+  // Hide semua page
+  document.querySelectorAll('.page-section').forEach(s => s.classList.add('hidden'));
   const target = document.getElementById('page-' + pageId);
   if (target) target.classList.remove('hidden');
+
+  // Update judul & breadcrumb
   document.getElementById('pageTitle').textContent = PAGE_TITLES[pageId] || pageId;
   document.getElementById('pageBreadcrumb').textContent = PAGE_TITLES[pageId] || pageId;
-  document.querySelectorAll('.app-sidebar .nav-link').forEach(a => a.classList.remove('active'));
-  if (el) el.classList.add('active');
 
-  // Tutup sidebar otomatis (mobile)
-  if (window.innerWidth < 992) {
-    const sidebar = document.querySelector('.app-sidebar');
-    if (sidebar && sidebar.classList.contains('sidebar-open')) {
-      const toggle = document.querySelector('[data-lte-toggle="sidebar"]');
-      if (toggle) toggle.click();
+  // ==== FIX: Hapus active dari SEMUA menu, lalu tambah ke menu yang diklik ====
+  document.querySelectorAll('.sidebar-menu .nav-link').forEach(a => a.classList.remove('active'));
+  if (el && el.classList) {
+    el.classList.add('active');
+  } else {
+    // Fallback: cari berdasarkan onclick
+    const found = Array.from(document.querySelectorAll('.sidebar-menu .nav-link'))
+      .find(a => (a.getAttribute('onclick') || '').indexOf("'" + pageId + "'") >= 0);
+    if (found) found.classList.add('active');
+  }
+
+  // ==== FIX: Auto-close sidebar SETELAH menu diklik (mobile) ====
+  if (window.innerWidth <= 992) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+      if (overlay) overlay.classList.remove('show');
     }
   }
 
+  // Page-specific init
   if (pageId === 'dashboard') { muatRiwayat(); muatRekapRealtime(); refreshSesiAktif(); refreshStatusHariIni(); }
   if (pageId === 'cariSiswa') { isiDropdownKelasCari(); }
   if (pageId === 'sidikJariSiswa' || pageId === 'sidikJariGuru' || pageId === 'qr') { renderSesiBannerEls(); }
   if (pageId === 'izin') { muatSesi(); }
   if (pageId === 'inputNilai' || pageId === 'daftarNilai') { if (currentUser) initGuruNilai(); }
   if (pageId === 'pengaturan') { adminLoadAll(); }
-}
-  if (window.innerWidth <= 992) {
+}  if (window.innerWidth <= 992) {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
       if (sidebar && sidebar.classList.contains('open')) {
