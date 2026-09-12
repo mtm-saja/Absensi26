@@ -1,46 +1,11 @@
 /*******************************************************
  * ABSENSI ONLINE - FRONTEND LOGIC
- * v10.0 - Perbaikan Layout & Fitur Historis
+ * v11.0 - Filter Kelas, Export Fix, Popup Logout Fix
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbwYSdrSiOqFCyocCzYdKGvLcKjgykSOOTVYCdNoZilXKXIZ35bgUPsuFCB48SzEgnkb/exec';
-const LS_KEY = 'absensi_session_v10';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxVlW0kHKmq2kDRUA0wDJBV8zifAtsoPmOg7QmN6XqqyGcXOk19zSPwmTuZaR5VWycs/exec';
+const LS_KEY = 'absensi_session_v11';
 
-/*******************************************************
- * SIDEBAR TOGGLE
- *******************************************************/
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  const main = document.getElementById('mainContent');
-  if (!sidebar) return;
-
-  if (window.innerWidth <= 992) {
-    // Mobile: slide in/out
-    sidebar.classList.toggle('open');
-    if (overlay) overlay.classList.toggle('show');
-  } else {
-    // Desktop: collapse/expand
-    sidebar.classList.toggle('closed');
-    if (main) main.classList.toggle('full');
-  }
-}
-
-function toggleUserMenu() {
-  const d = document.getElementById('userDropdown');
-  if (d) d.classList.toggle('open');
-}
-function closeUserMenu() {
-  const d = document.getElementById('userDropdown');
-  if (d) d.classList.remove('open');
-}
-
-// Tutup user menu jika klik di luar
-document.addEventListener('click', (e) => {
-  const ud = document.getElementById('userDropdown');
-  const btn = e.target.closest('.user-btn');
-  if (ud && !btn && !e.target.closest('#userDropdown')) ud.classList.remove('open');
-});
 /*******************************************************
  * STATE
  *******************************************************/
@@ -60,9 +25,11 @@ let izinFpData = [];
 let guruMapelList = [];
 let guruKelasList = [];
 let currentSiswaInput = [];
+let rekapDataCache = [];      // cache untuk export
+let daftarNilaiCache = [];    // cache untuk export
 
 /*******************************************************
- * POPUP SYSTEM
+ * POPUP
  *******************************************************/
 function showLoading(text) {
   text = text || 'Memproses...';
@@ -99,6 +66,36 @@ function closePopup() {
   document.getElementById('popupOverlay').classList.add('hidden');
   clearTimeout(window._popupTimer);
 }
+
+/*******************************************************
+ * SIDEBAR & USER MENU
+ *******************************************************/
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const main = document.getElementById('mainContent');
+  if (!sidebar) return;
+  if (window.innerWidth <= 992) {
+    sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('show');
+  } else {
+    sidebar.classList.toggle('closed');
+    if (main) main.classList.toggle('full');
+  }
+}
+function toggleUserMenu() {
+  const d = document.getElementById('userDropdown');
+  if (d) d.classList.toggle('open');
+}
+function closeUserMenu() {
+  const d = document.getElementById('userDropdown');
+  if (d) d.classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  const ud = document.getElementById('userDropdown');
+  const btn = e.target.closest('.user-btn');
+  if (ud && !btn && !e.target.closest('#userDropdown')) ud.classList.remove('open');
+});
 
 /*******************************************************
  * LOGIN POPUP
@@ -166,10 +163,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   startRekapWatcher();
   startRiwayatWatcher();
   isiDropdownKelasCari();
+  isiDropdownKelasRekap();
 });
 
 /*******************************************************
- * CLOCK (topbar)
+ * CLOCK
  *******************************************************/
 function startClock() {
   const update = () => {
@@ -190,20 +188,16 @@ function startClock() {
   datetimeTimer = setInterval(update, 1000);
 }
 
+/*******************************************************
+ * APPLY USER TO UI
+ *******************************************************/
 function applyUserToUI() {
   const role = currentUser ? currentUser.role : null;
   const nama = currentUser ? currentUser.user.nama : 'Belum Login';
-
-  // Topbar username (di dropdown)
   document.getElementById('topbarUserName').textContent = nama;
-
-  // Subtitle: kalau login → nama user saja; kalau belum → "Dashboard"
   const subtitle = document.getElementById('topbarSubtitle');
-  if (subtitle) {
-    subtitle.textContent = currentUser ? nama : 'Dashboard';
-  }
+  if (subtitle) subtitle.textContent = currentUser ? nama : 'Dashboard';
 
-  // ===== Rest of function tetap sama =====
   const menus = ['menuFpSiswa','menuSyarat','menuQR','menuFpGuru','menuIzin','menuRekap','menuInputNilai','menuDaftarNilai','menuPengaturan'];
   menus.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('disabled'); });
 
@@ -243,6 +237,9 @@ function applyUserToUI() {
 
   if (role === 'siswa') updateFingerprintButton('siswa');
   if (role === 'guru') updateFingerprintButton('guru');
+
+  // Refresh dropdown kelas rekap (role-dependent)
+  isiDropdownKelasRekap();
 }
 
 /*******************************************************
@@ -260,27 +257,21 @@ const PAGE_TITLES = {
 function showPage(pageId, el) {
   if (!canAccessPage(pageId)) return;
 
-  // Hide semua page
   document.querySelectorAll('.page-section').forEach(s => s.classList.add('hidden'));
   const target = document.getElementById('page-' + pageId);
   if (target) target.classList.remove('hidden');
 
-  // Update judul & breadcrumb
   document.getElementById('pageTitle').textContent = PAGE_TITLES[pageId] || pageId;
   document.getElementById('pageBreadcrumb').textContent = PAGE_TITLES[pageId] || pageId;
 
-  // ==== FIX: Hapus active dari SEMUA menu, lalu tambah ke menu yang diklik ====
   document.querySelectorAll('.sidebar-menu .nav-link').forEach(a => a.classList.remove('active'));
-  if (el && el.classList) {
-    el.classList.add('active');
-  } else {
-    // Fallback: cari berdasarkan onclick
+  if (el && el.classList) el.classList.add('active');
+  else {
     const found = Array.from(document.querySelectorAll('.sidebar-menu .nav-link'))
       .find(a => (a.getAttribute('onclick') || '').indexOf("'" + pageId + "'") >= 0);
     if (found) found.classList.add('active');
   }
 
-  // ==== FIX: Auto-close sidebar SETELAH menu diklik (mobile) ====
   if (window.innerWidth <= 992) {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -290,21 +281,14 @@ function showPage(pageId, el) {
     }
   }
 
-  // Page-specific init
   if (pageId === 'dashboard') { muatRiwayat(); muatRekapRealtime(); refreshSesiAktif(); refreshStatusHariIni(); }
   if (pageId === 'cariSiswa') { isiDropdownKelasCari(); }
   if (pageId === 'sidikJariSiswa' || pageId === 'sidikJariGuru' || pageId === 'qr') { renderSesiBannerEls(); }
   if (pageId === 'izin') { muatSesi(); }
+  if (pageId === 'rekap') { isiDropdownKelasRekap(); }
   if (pageId === 'inputNilai' || pageId === 'daftarNilai') { if (currentUser) initGuruNilai(); }
   if (pageId === 'pengaturan') { adminLoadAll(); }
-}  if (window.innerWidth <= 992) {
-      const sidebar = document.getElementById('sidebar');
-      const overlay = document.getElementById('sidebarOverlay');
-      if (sidebar && sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-        if (overlay) overlay.classList.remove('show');
-      }
-    }
+}
 
 function canAccessPage(pageId) {
   const role = currentUser ? currentUser.role : null;
@@ -368,14 +352,39 @@ function doLogout() {
   if (sesiTimer) clearInterval(sesiTimer);
   if (rekapTimer) clearInterval(rekapTimer);
   if (riwayatTimer) clearInterval(riwayatTimer);
-  currentUser = null;
-  localStorage.removeItem(LS_KEY);
-  applyUserToUI();
-  showPopup('Logout berhasil', true, 1500);
-  showPage('dashboard');
-  startSesiWatcher();
-  startRekapWatcher();
-  startRiwayatWatcher();
+
+  // Tampilkan popup konfirmasi logout
+  const ov = document.getElementById('popupOverlay');
+  const box = document.getElementById('popupBox');
+  const icon = document.getElementById('popupIcon');
+  const content = document.getElementById('popupContent');
+  const btn = document.getElementById('popupClose');
+  box.className = 'popup-box';
+  icon.textContent = '🚪';
+  content.innerHTML = '<div class="text">Yakin ingin logout?</div><div class="d-flex" style="gap:8px;justify-content:center;margin-top:14px;">' +
+    '<button class="btn btn-secondary btn-sm" id="logoutCancel">Batal</button>' +
+    '<button class="btn btn-danger btn-sm" id="logoutConfirm">Ya, Logout</button>' +
+    '</div>';
+  btn.classList.add('hidden');
+  ov.classList.remove('hidden');
+
+  setTimeout(() => {
+    const btnCancel = document.getElementById('logoutCancel');
+    const btnConfirm = document.getElementById('logoutConfirm');
+    if (btnCancel) btnCancel.onclick = closePopup;
+    if (btnConfirm) btnConfirm.onclick = () => {
+      closePopup();
+      // Proses logout
+      currentUser = null;
+      localStorage.removeItem(LS_KEY);
+      applyUserToUI();
+      showPage('dashboard');
+      startSesiWatcher();
+      startRekapWatcher();
+      startRiwayatWatcher();
+      setTimeout(() => showPopup('Logout berhasil', true, 1500), 200);
+    };
+  }, 50);
 }
 
 /*******************************************************
@@ -408,7 +417,6 @@ async function refreshSesiAktif() {
     renderSesiBannerEls();
   } catch(e) {}
 }
-
 async function refreshStatusHariIni() {
   try {
     const r = await api('getStatusHariIni');
@@ -417,13 +425,11 @@ async function refreshStatusHariIni() {
     handleRiwayatVisibility();
   } catch(e) {}
 }
-
 function renderSesiBannerEls() {
   const ids = ['sesiBannerContainer','siswaSesiBanner','guruSesiBanner','guruFpSesiBanner'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Prioritas: hari libur > sesi aktif > tidak ada sesi
     if (statusHariIni && statusHariIni.isLibur) {
       el.innerHTML = '<div class="sesi-banner err">' +
         '<div class="label">Status Hari Ini</div>' +
@@ -454,8 +460,7 @@ function renderSesiBannerEls() {
 
 function startSesiWatcher() {
   if (sesiTimer) clearInterval(sesiTimer);
-  refreshSesiAktif();
-  refreshStatusHariIni();
+  refreshSesiAktif(); refreshStatusHariIni();
   sesiTimer = setInterval(() => { refreshSesiAktif(); refreshStatusHariIni(); }, 30000);
 }
 function startRekapWatcher() {
@@ -468,28 +473,15 @@ function startRiwayatWatcher() {
   handleRiwayatVisibility();
   riwayatTimer = setInterval(handleRiwayatVisibility, 60000);
 }
-
-/**
- * Auto-hide riwayat di jam 23:59 - buka saat sesi pertama mulai
- */
 function handleRiwayatVisibility() {
   const card = document.getElementById('riwayatCard');
   const wrap = document.getElementById('riwayatTableWrap');
   const closed = document.getElementById('riwayatClosedMsg');
   if (!card) return;
-
-  // Sembunyikan jika:
-  // 1. Hari libur, atau
-  // 2. Belum ada sesi aktif DAN jam < sesi pertama mulai (mis. sebelum 06:30)
-  // 3. Setelah 23:59 (reset harian)
-
   const now = new Date();
   const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-
-  // Cek sesi pertama
   const sesiPertama = currentSesiList && currentSesiList[0];
   const belumMulai = sesiPertama && hhmm < sesiPertama.mulaiTW;
-
   const isLibur = statusHariIni && statusHariIni.isLibur;
   const noSesi = !currentSesiAktif;
 
@@ -497,9 +489,9 @@ function handleRiwayatVisibility() {
     wrap.classList.add('hidden');
     closed.classList.remove('hidden');
     if (isLibur) {
-      closed.innerHTML = '<i class="bi bi-sun fs-4 d-block mb-1"></i><strong>Hari Libur</strong><br>Tidak ada absensi hari ini.';
+      closed.innerHTML = '<i class="bi bi-sun fs-4 d-block mb-1"></i><strong>Hari Libur</strong><br><span class="small">Tidak ada absensi hari ini.</span>';
     } else {
-      closed.innerHTML = '<i class="bi bi-moon-stars fs-4 d-block mb-1"></i><strong>Sesi Belum Dimulai</strong><br>Belum ada riwayat saat ini.';
+      closed.innerHTML = '<i class="bi bi-moon-stars fs-4 d-block mb-1"></i><strong>Sesi Belum Dimulai</strong><br><span class="small">Belum ada riwayat saat ini.</span>';
     }
   } else {
     wrap.classList.remove('hidden');
@@ -544,7 +536,7 @@ function renderRekapHTML(sesiData) {
 }
 
 /*******************************************************
- * RIWAYAT GLOBAL (dashboard)
+ * RIWAYAT GLOBAL
  *******************************************************/
 async function muatRiwayat() {
   try {
@@ -583,7 +575,7 @@ async function muatRiwayat() {
 }
 
 /*******************************************************
- * CARI SISWA (per periode)
+ * CARI SISWA
  *******************************************************/
 async function isiDropdownKelasCari() {
   try {
@@ -608,7 +600,7 @@ async function doCariSiswa() {
     const r = await api('cariSiswa', { q: q, kelas: kelas, dari: dari, sampai: sampai });
     if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
     if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning small">Tidak ada siswa yang cocok.</div>'; return; }
-    let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr>' +
+    let html = '<table><thead><tr>' +
       '<th>No</th><th>Nama</th><th>Tanggal</th>' +
       '<th>TW</th><th>TL</th><th>S</th><th>I</th><th>A</th><th>B</th></tr></thead><tbody>';
     r.data.forEach((s, i) => {
@@ -622,7 +614,7 @@ async function doCariSiswa() {
         '<td class="text-center text-danger">' + s.A + '</td>' +
         '<td class="text-center text-danger">' + s.B + '</td></tr>';
     });
-    html += '</tbody></table></div>';
+    html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>';
@@ -816,21 +808,47 @@ async function simpanIzin() {
 }
 
 /*******************************************************
- * REKAP PERIODE
+ * REKAP PERIODE + FILTER KELAS
  *******************************************************/
+async function isiDropdownKelasRekap() {
+  const el = document.getElementById('rekapKelas');
+  if (!el) return;
+  let list = [];
+  try {
+    if (currentUser && currentUser.role === 'guru') {
+      // Guru: hanya kelas yang diajar
+      const r = await api('getKelasGuru', { nip: currentUser.user.id });
+      list = r.ok ? r.kelas : [];
+    } else if (currentUser && currentUser.role === 'admin') {
+      // Admin: semua kelas
+      const r = await api('listKelas');
+      list = r.ok ? r.kelas : [];
+    } else {
+      // Belum login: kosongkan
+      list = [];
+    }
+  } catch(e) { list = []; }
+
+  let opts = '<option value="">Semua Kelas</option>';
+  list.forEach(k => { opts += '<option value="' + k + '">' + k + '</option>'; });
+  el.innerHTML = opts;
+}
+
 async function muatRekapPeriode() {
   const dari = document.getElementById('rekapDari').value;
   const sampai = document.getElementById('rekapSampai').value;
   const role = document.getElementById('rekapRole').value;
+  const kelas = document.getElementById('rekapKelas').value;
   if (!dari || !sampai) { showPopup('Isi tanggal dari & sampai', false); return; }
   if (currentUser.role === 'guru' && role === 'guru') { showPopup('Guru tidak bisa lihat rekap guru', false); return; }
   const el = document.getElementById('rekapPeriodeHasil');
   el.innerHTML = '<div class="text-muted small">Memuat...</div>';
   try {
-    const r = await api('rekapPeriode', { dari: dari, sampai: sampai, role: role });
+    const r = await api('rekapPeriode', { dari: dari, sampai: sampai, role: role, kelas: kelas });
     if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
-    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning small">Tidak ada data.</div>'; return; }
-    let html = '<table class="table table-sm table-striped"><thead><tr>' +
+    if (!r.data.length) { el.innerHTML = '<div class="alert alert-warning small">Tidak ada data.</div>'; rekapDataCache = []; return; }
+    rekapDataCache = r.data;
+    let html = '<table><thead><tr>' +
       '<th>No</th><th>Nama</th><th>TW</th><th>TL</th><th>I</th><th>S</th><th>A</th><th>B</th><th>%</th>' +
       '</tr></thead><tbody>';
     r.data.forEach((u, i) => {
@@ -845,6 +863,159 @@ async function muatRekapPeriode() {
     html += '</tbody></table>';
     el.innerHTML = html;
   } catch(e) { el.innerHTML = '<div class="alert alert-danger small">Gagal: ' + e.message + '</div>'; }
+}
+
+/*******************************************************
+ * EXPORT EXCEL & PDF
+ *******************************************************/
+function getNamaFile(prefix) {
+  const now = new Date();
+  const tgl = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+  return prefix + '_' + tgl;
+}
+function tableToArray(table) {
+  const rows = [];
+  table.querySelectorAll('tr').forEach(tr => {
+    const cells = [];
+    tr.querySelectorAll('th, td').forEach(c => {
+      let txt = c.innerText.trim().replace(/\s+/g, ' ');
+      cells.push(txt);
+    });
+    if (cells.length) rows.push(cells);
+  });
+  return rows;
+}
+
+/* ===== EXPORT REKAP ABSENSI ===== */
+async function exportRekapExcel() {
+  if (!rekapDataCache.length) { showPopup('Tampilkan data rekap dulu', false, 2000); return; }
+  const dari = document.getElementById('rekapDari').value || '-';
+  const sampai = document.getElementById('rekapSampai').value || '-';
+  const role = document.getElementById('rekapRole').value || 'siswa';
+  const kelas = document.getElementById('rekapKelas').value || 'Semua';
+  showLoading('Menyiapkan Excel...');
+  try {
+    // Data tabel dari cache
+    const head = [['No','Nama','TW','TL','IZIN','SAKIT','ALPA','BOLOS','% Hadir']];
+    const body = rekapDataCache.map((u, i) => [
+      i+1, u.nama, u.TW, u.TL, u.IZIN, u.SAKIT, u.ALPA, u.BOLOS, u.persen + '%'
+    ]);
+    const info = [
+      ['REKAP ABSENSI ' + role.toUpperCase()],
+      ['Periode:', dari + ' s/d ' + sampai],
+      ['Kelas:', kelas],
+      ['Sekolah:', 'SMPN 8 Ciparasi'],
+      ['Diekspor:', new Date().toLocaleString('id-ID')],
+      []
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(info.concat(head).concat(body));
+    ws['!cols'] = [{wch:25},{wch:6},{wch:30},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:10}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Absensi');
+    XLSX.writeFile(wb, getNamaFile('Rekap_' + role + '_' + kelas) + '.xlsx');
+    showPopup('✅ File Excel berhasil diunduh', true, 1500);
+  } catch(e) { showPopup('Gagal export: ' + e.message, false, 3000); }
+}
+
+async function exportRekapPDF() {
+  if (!rekapDataCache.length) { showPopup('Tampilkan data rekap dulu', false, 2000); return; }
+  const dari = document.getElementById('rekapDari').value || '-';
+  const sampai = document.getElementById('rekapSampai').value || '-';
+  const role = document.getElementById('rekapRole').value || 'siswa';
+  const kelas = document.getElementById('rekapKelas').value || 'Semua';
+  showLoading('Menyiapkan PDF...');
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('REKAP ABSENSI ' + role.toUpperCase(), 148, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('SMPN 8 CIPARASI', 148, 21, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text('Periode: ' + dari + ' s/d ' + sampai + ' | Kelas: ' + kelas, 148, 26, { align: 'center' });
+    doc.text('Diekspor: ' + new Date().toLocaleString('id-ID'), 148, 30, { align: 'center' });
+
+    const head = [['No','Nama','TW','TL','IZIN','SAKIT','ALPA','BOLOS','% Hadir']];
+    const body = rekapDataCache.map((u, i) => [
+      i+1, u.nama, u.TW, u.TL, u.IZIN, u.SAKIT, u.ALPA, u.BOLOS, u.persen + '%'
+    ]);
+
+    doc.autoTable({
+      head: head, body: body, startY: 35,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 70, halign: 'left' }
+      }
+    });
+    doc.save(getNamaFile('Rekap_' + role + '_' + kelas) + '.pdf');
+    showPopup('✅ PDF berhasil diunduh', true, 1500);
+  } catch(e) { showPopup('Gagal export: ' + e.message, false, 3000); }
+}
+
+/* ===== EXPORT DAFTAR NILAI ===== */
+async function exportDaftarNilaiExcel() {
+  const table = document.querySelector('#daftarNilaiHasil table');
+  if (!table) { showPopup('Tampilkan daftar nilai dulu', false, 2000); return; }
+  const mapel = document.getElementById('daftarMapel').value || '-';
+  const kelas = document.getElementById('daftarKelas').value || '-';
+  showLoading('Menyiapkan Excel...');
+  try {
+    const data = tableToArray(table);
+    const info = [
+      ['DAFTAR NILAI'],
+      ['Mata Pelajaran:', mapel],
+      ['Kelas:', kelas],
+      ['Sekolah:', 'SMPN 8 Ciparasi'],
+      ['Diekspor:', new Date().toLocaleString('id-ID')],
+      []
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(info.concat(data));
+    ws['!cols'] = data[0].map((_, i) => ({ wch: i === 1 ? 30 : 15 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Daftar Nilai');
+    XLSX.writeFile(wb, getNamaFile('Daftar_Nilai_' + kelas) + '.xlsx');
+    showPopup('✅ File Excel berhasil diunduh', true, 1500);
+  } catch(e) { showPopup('Gagal export: ' + e.message, false, 3000); }
+}
+
+async function exportDaftarNilaiPDF() {
+  const table = document.querySelector('#daftarNilaiHasil table');
+  if (!table) { showPopup('Tampilkan daftar nilai dulu', false, 2000); return; }
+  const mapel = document.getElementById('daftarMapel').value || '-';
+  const kelas = document.getElementById('daftarKelas').value || '-';
+  showLoading('Menyiapkan PDF...');
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFontSize(14);
+    doc.setFont(undefined, 'bold');
+    doc.text('DAFTAR NILAI', 148, 15, { align: 'center' });
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text('SMPN 8 CIPARASI', 148, 21, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text('Mapel: ' + mapel + ' | Kelas: ' + kelas, 148, 26, { align: 'center' });
+    doc.text('Diekspor: ' + new Date().toLocaleString('id-ID'), 148, 30, { align: 'center' });
+    const data = tableToArray(table);
+    doc.autoTable({
+      head: [data[0]], body: data.slice(1), startY: 35,
+      styles: { fontSize: 9, cellPadding: 2, halign: 'center' },
+      headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold', halign: 'center' },
+      alternateRowStyles: { fillColor: [241, 245, 249] },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 60, halign: 'left' }
+      }
+    });
+    doc.save(getNamaFile('Daftar_Nilai_' + kelas) + '.pdf');
+    showPopup('✅ PDF berhasil diunduh', true, 1500);
+  } catch(e) { showPopup('Gagal export: ' + e.message, false, 3000); }
 }
 
 /*******************************************************
@@ -922,7 +1093,7 @@ async function loadSiswaUntukInput() {
   const r = await api('getSiswaByKelas', { kelas: kelas });
   if (!r.ok || !r.data.length) { body.innerHTML = '<div class="text-muted small">Tidak ada siswa.</div>'; return; }
   currentSiswaInput = r.data;
-  let html = '<div class="table-wrap" style="max-height:400px;"><table class="table table-sm"><thead><tr><th style="width:36px">No</th><th>Nama</th><th style="width:90px">Nilai</th></tr></thead><tbody>';
+  let html = '<div class="table-wrap" style="max-height:400px;"><table><thead><tr><th style="width:36px">No</th><th>Nama</th><th style="width:90px">Nilai</th></tr></thead><tbody>';
   r.data.forEach((s, i) => {
     html += '<tr><td>' + (i+1) + '</td><td><span style="font-size:.82rem">' + s.nama + '</span><br><small class="text-muted">' + s.nisn + '</small></td>' +
       '<td><input type="number" class="form-control form-control-sm nilai-input" data-nisn="' + s.nisn + '" placeholder="0" min="0" max="100"></td></tr>';
@@ -971,7 +1142,8 @@ async function loadDaftarNilai() {
     if (!r.ok) { showPopup(r.msg, false); return; }
     if (!r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada siswa.</div>'; return; }
     if (!r.jenis.length) { el.innerHTML = '<div class="text-muted small">Belum ada nilai.</div>'; return; }
-    let html = '<table class="table table-sm table-striped" style="font-size:.78rem;"><thead><tr><th>No</th><th>Nama</th>';
+    daftarNilaiCache = r;
+    let html = '<table><thead><tr><th>No</th><th>Nama</th>';
     r.jenis.forEach(j => { html += '<th class="text-center">' + j + '</th>'; });
     html += '</tr></thead><tbody>';
     r.data.forEach((s, i) => {
@@ -1023,8 +1195,8 @@ async function cekKelulusan() {
  *******************************************************/
 function toggleAccordion(id) {
   const el = document.getElementById(id);
-  const header = el.previousElementSibling;
   if (!el) return;
+  const header = el.previousElementSibling;
   const isOpen = el.classList.contains('open');
   if (isOpen) {
     el.classList.remove('open');
@@ -1032,7 +1204,6 @@ function toggleAccordion(id) {
   } else {
     el.classList.add('open');
     if (header) header.classList.add('open');
-    // Load data saat dibuka
     if (id === 'acc-sesi') renderSesiList();
     if (id === 'acc-libur') adminLoadLibur();
     if (id === 'acc-izinfp') adminLoadIzinFp();
@@ -1052,10 +1223,7 @@ function adminLoadAll() {
   muatHistoris();
 }
 
-/*******************************************************
- * ADMIN - SESI
- *******************************************************/
-function renderSesiList() {
+async function renderSesiList() {
   const el = document.getElementById('sesiList');
   if (!el) return;
   if (!currentSesiList.length) { el.innerHTML = '<div class="text-muted small">Belum ada sesi.</div>'; return; }
@@ -1085,9 +1253,6 @@ async function adminHapusSesi(sesi) {
   showPopup(r.msg, r.ok);
 }
 
-/*******************************************************
- * ADMIN - LIBUR
- *******************************************************/
 async function adminSimpanLibur() {
   const tanggal = document.getElementById('liburTanggal').value;
   const keterangan = document.getElementById('liburKet').value.trim();
@@ -1117,9 +1282,6 @@ async function adminHapusLibur(tanggal) {
   showPopup(r.msg, r.ok);
 }
 
-/*******************************************************
- * ADMIN - IZIN FP
- *******************************************************/
 async function adminLoadIzinFp() {
   showLoading('Memuat...');
   try {
@@ -1203,9 +1365,6 @@ async function adminBulkIzinFp(allowed) {
   } catch(e) { showPopup('Gagal: '+e.message, false, 2500); }
 }
 
-/*******************************************************
- * ADMIN - USER & FP
- *******************************************************/
 async function adminLoadUsers() {
   const r = await api('listUsers');
   const el = document.getElementById('userList');
@@ -1246,9 +1405,6 @@ async function adminResetFp(id, nama) {
   showPopup(r.msg, r.ok);
 }
 
-/*******************************************************
- * ADMIN - FITUR
- *******************************************************/
 async function adminLoadFitur() {
   const r = await api('getFitur');
   if (!r.ok) return;
@@ -1275,9 +1431,6 @@ async function adminSetFitur() {
   showPopup(r.msg, r.ok);
 }
 
-/*******************************************************
- * ADMIN - HISTORIS & ARSIP
- *******************************************************/
 async function muatHistoris() {
   const el = document.getElementById('historisHasil');
   if (!el) return;
@@ -1286,11 +1439,10 @@ async function muatHistoris() {
     const r = await api('historis');
     if (!r.ok) { el.innerHTML = '<div class="alert alert-danger small">' + r.msg + '</div>'; return; }
     if (!r.data.length) { el.innerHTML = '<div class="text-muted small">Belum ada aktivitas.</div>'; return; }
-    let html = '<table class="table table-sm table-striped" style="font-size:.75rem;"><thead><tr>' +
-      '<th>Waktu</th><th>Aksi</th><th>Oleh</th><th>Detail</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>Waktu</th><th>Aksi</th><th>Oleh</th><th>Detail</th></tr></thead><tbody>';
     r.data.slice(0, 50).forEach(h => {
       html += '<tr><td><small>' + h.timestamp + '</small></td>' +
-        '<td><span class="badge bg-info">' + h.aksi + '</span></td>' +
+        '<td><span class="badge badge-role-admin">' + h.aksi + '</span></td>' +
         '<td><small>' + h.oleh + '</small></td>' +
         '<td><small>' + h.detail + '</small></td></tr>';
     });
@@ -1300,8 +1452,8 @@ async function muatHistoris() {
 }
 
 async function adminArsipManual() {
-  if (!confirm('Arsip data kehadiran lama ke sheet Historis?\nData hari ini tetap di sheet Kehadiran.\n\nLanjutkan?')) return;
-  showLoading('Mengarsipkan data...');
+  if (!confirm('Arsip data kehadiran lama ke sheet Historis?\nData hari ini tetap di sheet Kehadiran.')) return;
+  showLoading('Mengarsipkan...');
   try {
     const r = await api('arsipManual');
     showPopup(r.msg, r.ok, 3000);
@@ -1310,14 +1462,14 @@ async function adminArsipManual() {
 }
 
 async function adminPasangTrigger() {
-  if (!confirm('Pasang trigger arsip otomatis?\nData akan diarsip setiap 2 hari sekali jam 23:59.')) return;
+  if (!confirm('Pasang trigger arsip otomatis harian jam 23:00?')) return;
   showLoading('Memasang trigger...');
   try {
     const r = await api('pasangTrigger');
     showPopup(r.msg, r.ok, 3000);
     if (r.ok) {
       const info = document.getElementById('infoArsip');
-      if (info) info.innerHTML = '✅ Trigger: <strong>aktif</strong> — arsip otomatis setiap 2 hari jam 23:59.';
+      if (info) info.innerHTML = '✅ Trigger: <strong>aktif</strong> — arsip otomatis setiap hari jam 23:00.';
     }
   } catch(e) { showPopup('Gagal: '+e.message, false, 3000); }
 }
