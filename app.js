@@ -3,7 +3,7 @@
  * v9.0 - AdminLTE 5 Redesign
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbygPnv3t4dMppEFosz2kY0bZc2sSXwgOOVDcur-rOXYVn9rWxKGJvyDCc3EE9vWubpZ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyP2QpoBj6SWl1VYVNbyimHkoukE_mwc2hJmmLUorX7frSRNB9oM0mMDaYkSuKT7cKr/exec';
 const LS_KEY = 'absensi_session_v9';
 
 /*******************************************************
