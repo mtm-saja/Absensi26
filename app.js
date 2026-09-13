@@ -34,16 +34,40 @@ async function api(action, payload = {}, useCache = false) {
     const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action, ...payload }),
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      redirect: 'follow'
     });
-    const data = await res.json();
+
+    // Cek content-type sebelum parse JSON
+    const contentType = res.headers.get('content-type') || '';
+    const text = await res.text();
+
+    if (!contentType.includes('application/json') && text.trim().startsWith('<')) {
+      // Server balikin HTML (kemungkinan redirect ke login Google / error page)
+      console.error('[API HTML Response]', text.slice(0, 300));
+      return {
+        ok: false,
+        msg: 'Server tidak mengembalikan JSON. Kemungkinan deployment Apps Script belum di-set "Anyone" atau URL salah. Cek: ' + API_URL
+      };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      console.error('[API Parse Error]', text.slice(0, 300));
+      return {
+        ok: false,
+        msg: 'Response bukan JSON valid. Periksa deployment Apps Script Anda.'
+      };
+    }
+
     if (useCache) apiCache.set(key, { data, ts: Date.now() });
     return data;
   } catch (e) {
     return { ok: false, msg: 'Koneksi gagal: ' + e.message };
   }
 }
-
 /* ============ POPUP ============ */
 function showLoading(text = 'Memproses...') {
   const ov = document.getElementById('popupOverlay');
