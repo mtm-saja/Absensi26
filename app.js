@@ -3,7 +3,7 @@
  * v12.0 - Ramping, Cepat, Login 1 Pintu
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbycpYPt-PmHs78CEglims0RTa4x8AME-QAPvR-xqVp7UuSFOlPx_Kg_nG6okB3A6bBo/exec;
+const API_URL = 'https://script.google.com/macros/s/AKfycbzDXl612L2hKXReCKMTtaTwTqu_sxWuiCWvBWvpCFq1s9g3OJbnc9PeeEszV9G-B3-i/exec';
 const LS_KEY = 'absensi_session_v12';
 
 /* ============ STATE ============ */
@@ -34,39 +34,16 @@ async function api(action, payload = {}, useCache = false) {
     const res = await fetch(API_URL, {
       method: 'POST',
       body: JSON.stringify({ action, ...payload }),
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      redirect: 'follow'
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
     });
-
-    const text = await res.text();
-    const trimmed = text.trim();
-
-    // Deteksi HTML (redirect ke login Google / error page)
-    if (trimmed.startsWith('<')) {
-      console.error('[API] Server returned HTML:', trimmed.slice(0, 200));
-      return {
-        ok: false,
-        msg: '⚠️ Server balikin HTML, bukan JSON. Kemungkinan:\n' +
-             '1. URL API di app.js beda dengan deployment\n' +
-             '2. Deployment access bukan "Anyone"\n' +
-             '3. Status code: ' + res.status
-      };
-    }
-
-    let data;
-    try {
-      data = JSON.parse(trimmed);
-    } catch (e) {
-      console.error('[API] JSON parse error:', trimmed.slice(0, 200));
-      return { ok: false, msg: 'Response bukan JSON valid: ' + trimmed.slice(0, 100) };
-    }
-
+    const data = await res.json();
     if (useCache) apiCache.set(key, { data, ts: Date.now() });
     return data;
   } catch (e) {
     return { ok: false, msg: 'Koneksi gagal: ' + e.message };
   }
 }
+
 /* ============ POPUP ============ */
 function showLoading(text = 'Memproses...') {
   const ov = document.getElementById('popupOverlay');
