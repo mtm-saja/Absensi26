@@ -3,7 +3,7 @@
  * v11.0 - Filter Kelas, Export Fix, Popup Logout Fix
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxVlW0kHKmq2kDRUA0wDJBV8zifAtsoPmOg7QmN6XqqyGcXOk19zSPwmTuZaR5VWycs/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbylnI4zOnZYHzoCbEx_75bE99jZKYDBUqvrcP9MAVYZaKv20HDiA15utJjRe_OkRo59/exec';
 const LS_KEY = 'absensi_session_v11';
 
 /*******************************************************
