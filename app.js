@@ -38,28 +38,27 @@ async function api(action, payload = {}, useCache = false) {
       redirect: 'follow'
     });
 
-    // Cek content-type sebelum parse JSON
-    const contentType = res.headers.get('content-type') || '';
     const text = await res.text();
+    const trimmed = text.trim();
 
-    if (!contentType.includes('application/json') && text.trim().startsWith('<')) {
-      // Server balikin HTML (kemungkinan redirect ke login Google / error page)
-      console.error('[API HTML Response]', text.slice(0, 300));
+    // Deteksi HTML (redirect ke login Google / error page)
+    if (trimmed.startsWith('<')) {
+      console.error('[API] Server returned HTML:', trimmed.slice(0, 200));
       return {
         ok: false,
-        msg: 'Server tidak mengembalikan JSON. Kemungkinan deployment Apps Script belum di-set "Anyone" atau URL salah. Cek: ' + API_URL
+        msg: '⚠️ Server balikin HTML, bukan JSON. Kemungkinan:\n' +
+             '1. URL API di app.js beda dengan deployment\n' +
+             '2. Deployment access bukan "Anyone"\n' +
+             '3. Status code: ' + res.status
       };
     }
 
     let data;
     try {
-      data = JSON.parse(text);
-    } catch (parseErr) {
-      console.error('[API Parse Error]', text.slice(0, 300));
-      return {
-        ok: false,
-        msg: 'Response bukan JSON valid. Periksa deployment Apps Script Anda.'
-      };
+      data = JSON.parse(trimmed);
+    } catch (e) {
+      console.error('[API] JSON parse error:', trimmed.slice(0, 200));
+      return { ok: false, msg: 'Response bukan JSON valid: ' + trimmed.slice(0, 100) };
     }
 
     if (useCache) apiCache.set(key, { data, ts: Date.now() });
