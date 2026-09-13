@@ -3,7 +3,7 @@
  * v12.0 - Ramping, Cepat, Login 1 Pintu
  *******************************************************/
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzYIe0o6xpvyE3FpkHB027xpEl94NqVQRbS21oV02AEdmvqkLguLLfQg2lnRKY5ujKY/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbycpYPt-PmHs78CEglims0RTa4x8AME-QAPvR-xqVp7UuSFOlPx_Kg_nG6okB3A6bBo/exec';
 const LS_KEY = 'absensi_session_v12';
 
 /* ============ STATE ============ */
