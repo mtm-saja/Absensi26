@@ -1332,14 +1332,21 @@ th { background: var(--primary-lighter); color: var(--primary); font-weight: bol
 
     <!-- UJIAN HASIL -->
     <div id="menu-ujian-hasil" class="section">
-      <h3 style="color:var(--primary); font-size:15px;">📊 Hasil Ujian</h3>
-      <div style="margin-bottom:10px;">
+      <h3 style="color:var(--primary); font-size:15px;">📊 Monitor & Hasil Ujian</h3>
+      <div style="margin-bottom:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
         <button class="btn-primary btn-sm" onclick="switchMenu('ujian-kelola', document.querySelector('[data-menu=ujian-kelola]'))">← Kembali</button>
-        <span id="ujianHasilJudul" style="margin-left:10px; font-weight:700; color:var(--primary);"></span>
+        <span id="ujianHasilJudul" style="font-weight:700; color:var(--primary);"></span>
+        <button class="btn-primary btn-sm" style="margin-left:auto; background:#0d9488;" onclick="refreshHasilUjian()">🔄 Refresh</button>
       </div>
+      <div id="ujianHasilSummary" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;"></div>
+      <p style="font-size:11px; color:#666; margin:0 0 8px;">
+        💡 <b>Sedang ujian</b> = masih mengerjakan.
+        <b>Buka kembali</b> = siswa timeout/logout bisa lanjut (jawaban tetap).
+        <b>Reset</b> = hapus sesi, siswa mulai dari nol.
+      </p>
       <div class="table-responsive">
         <table>
-          <thead><tr><th>No</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Skor</th><th>Status</th><th>Waktu</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>No</th><th>NISN</th><th>Nama</th><th>Kelas</th><th>Skor</th><th>Status</th><th>Sisa / Waktu</th><th style="min-width:160px;">Aksi</th></tr></thead>
           <tbody id="tableUjianHasilBody"></tbody>
         </table>
       </div>
@@ -8996,21 +9003,116 @@ function hapusSoalUjian(id) {
   });
 }
 
+let _hasilUjianIdAktif = null;
+
 function bukaHasilUjian(ujianId) {
+  _hasilUjianIdAktif = ujianId;
   const u = ujianListCache.find(x => String(x.id) === String(ujianId));
-  setText('ujianHasilJudul', u ? u.judul : '');
+  setText('ujianHasilJudul', u ? (u.judul + (u.mapel ? ' · ' + u.mapel : '')) : '');
   switchMenu('ujian-hasil', null, true);
+  loadHasilUjianData(ujianId);
+}
+
+function refreshHasilUjian() {
+  if (!_hasilUjianIdAktif) return showBigPopup('warning', 'Info', 'Buka hasil dari daftar ujian dulu.');
+  loadHasilUjianData(_hasilUjianIdAktif);
+}
+
+function loadHasilUjianData(ujianId) {
   sendRequest({ action: 'ujian_hasil_list', ujian_id: ujianId }, res => {
     const tbody = $('tableUjianHasilBody');
-    if (res.status !== 'success') { tbody.innerHTML = `<tr><td colspan="8">${res.message}</td></tr>`; return; }
+    const sum = $('ujianHasilSummary');
+    if (!tbody) return;
+    if (res.status !== 'success') {
+      tbody.innerHTML = `<tr><td colspan="8">${res.message || 'Gagal memuat'}</td></tr>`;
+      if (sum) sum.innerHTML = '';
+      return;
+    }
     const rows = res.data || [];
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Belum ada siswa yang mengerjakan.</td></tr>'; return; }
-    tbody.innerHTML = rows.map((r, i) => `<tr>
-      <td>${i+1}</td><td>${r.nisn}</td><td>${r.nama}</td><td>${r.kelas||'-'}</td>
-      <td><b>${r.skor}/${r.skor_max}</b></td><td>${r.status}</td>
-      <td style="font-size:10px;">${(r.selesai_at||'').replace('T',' ').substring(0,19)}</td>
-      <td><button class="btn-edit" onclick="lihatDetailHasil('${r.id}')">👁️</button></td>
-    </tr>`).join('');
+    const s = res.summary || {};
+    if (sum) {
+      sum.innerHTML = `
+        <span style="background:#dbeafe;color:#1e40af;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">👥 Total: ${s.total||rows.length}</span>
+        <span style="background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">⏳ Sedang: ${s.berlangsung||0}</span>
+        <span style="background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">⏰ Timeout: ${s.timeout||0}</span>
+        <span style="background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;">✅ Selesai: ${s.selesai||0}</span>`;
+    }
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Belum ada siswa yang mengerjakan.</td></tr>';
+      return;
+    }
+    function fmtSisa(sec) {
+      if (sec == null || sec < 0) return '-';
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+    function statusBadge(st, lewat) {
+      if (st === 'berlangsung') {
+        if (lewat) return '<span style="background:#f97316;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">⏳ LEWAT WAKTU</span>';
+        return '<span style="background:#eab308;color:#111;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">⏳ SEDANG UJIAN</span>';
+      }
+      if (st === 'timeout') return '<span style="background:#dc2626;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">⏰ TIMEOUT</span>';
+      if (st === 'selesai') return '<span style="background:#16a34a;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;">✅ SELESAI</span>';
+      return st || '-';
+    }
+    tbody.innerHTML = rows.map((r, i) => {
+      let waktuCol = '-';
+      if (r.status === 'berlangsung') {
+        waktuCol = r.lewat_waktu ? '<span style="color:#dc2626;font-weight:700;">Habis</span>' : ('Sisa ' + fmtSisa(r.sisa_detik));
+        if (r.batas_at) waktuCol += '<br><small style="color:#666;">batas ' + String(r.batas_at).replace('T',' ').substring(0,19) + '</small>';
+      } else {
+        waktuCol = (r.selesai_at || r.mulai_at || '').replace('T',' ').substring(0,19) || '-';
+      }
+      const skor = (r.skor != null ? r.skor : '-') + '/' + (r.skor_max != null ? r.skor_max : '-');
+      let aksi = `<button class="btn-edit" title="Detail" onclick="lihatDetailHasil('${r.id}')">👁️</button> `;
+      if (r.status === 'berlangsung') {
+        aksi += `<button class="btn-sm" style="background:#0d9488;color:#fff;border:none;border-radius:5px;padding:4px 6px;cursor:pointer;" title="Perpanjang waktu" onclick="perpanjangUjianSiswa('${r.id}')">⏱️+</button> `;
+      }
+      if (r.status === 'timeout' || r.status === 'berlangsung') {
+        aksi += `<button class="btn-sm" style="background:#2563eb;color:#fff;border:none;border-radius:5px;padding:4px 6px;cursor:pointer;" title="Buka kembali (jawaban tetap)" onclick="bukaKembaliUjianSiswa('${r.id}')">🔓</button> `;
+      }
+      aksi += `<button class="btn-sm" style="background:#dc2626;color:#fff;border:none;border-radius:5px;padding:4px 6px;cursor:pointer;" title="Reset sesi (mulai dari nol)" onclick="resetPengerjaanUjian('${r.id}','${(r.nama||r.nisn||'').replace(/'/g,"\'")}')">↺</button>`;
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${r.nisn||''}</td>
+        <td>${r.nama||'-'}</td>
+        <td>${r.kelas||'-'}</td>
+        <td><b>${skor}</b></td>
+        <td>${statusBadge(r.status, r.lewat_waktu)}</td>
+        <td style="font-size:11px;">${waktuCol}</td>
+        <td style="white-space:nowrap;">${aksi}</td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+function perpanjangUjianSiswa(pengerjaanId) {
+  const menit = prompt('Perpanjang berapa menit?', '15');
+  if (menit == null) return;
+  const n = parseInt(menit, 10);
+  if (!n || n < 1) return showBigPopup('warning', 'Info', 'Menit tidak valid.');
+  sendRequest({ action: 'ujian_perpanjang', pengerjaan_id: pengerjaanId, tambah_menit: n }, res => {
+    showBigPopup(res.status === 'success' ? 'success' : 'danger', 'Perpanjang', res.message || 'Selesai');
+    if (res.status === 'success') refreshHasilUjian();
+  });
+}
+
+function bukaKembaliUjianSiswa(pengerjaanId) {
+  const menit = prompt('Buka kembali & beri waktu berapa menit?\n(Jawaban siswa tetap tersimpan)', '30');
+  if (menit == null) return;
+  const n = parseInt(menit, 10);
+  if (!n || n < 1) return showBigPopup('warning', 'Info', 'Menit tidak valid.');
+  sendRequest({ action: 'ujian_buka_kembali', pengerjaan_id: pengerjaanId, tambah_menit: n }, res => {
+    showBigPopup(res.status === 'success' ? 'success' : 'danger', 'Buka Kembali', res.message || 'Selesai');
+    if (res.status === 'success') refreshHasilUjian();
+  });
+}
+
+function resetPengerjaanUjian(pengerjaanId, nama) {
+  if (!confirm('Reset sesi ujian ' + (nama || '') + '?\n\nJawaban akan DIHAPUS. Siswa bisa mengerjakan dari awal.\n\nPilih "Buka kembali" jika ingin mempertahankan jawaban.')) return;
+  sendRequest({ action: 'ujian_reset_pengerjaan', pengerjaan_id: pengerjaanId }, res => {
+    showBigPopup(res.status === 'success' ? 'success' : 'danger', 'Reset', res.message || 'Selesai');
+    if (res.status === 'success') refreshHasilUjian();
   });
 }
 
