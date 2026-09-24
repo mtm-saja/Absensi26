@@ -7311,98 +7311,162 @@ function stripResidualDigitsAroundMath(s) {
     var m = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹' };
     return String(n).split('').map(function (d) { return m[d] || d; }).join('');
   }
-  function onlyCoreDigits(nums, core) {
-    return nums.length > 0 && nums.every(function (n) {
-      return n === core || core.indexOf(n) >= 0 ||
-        String(n).split('').every(function (d) { return core.indexOf(d) >= 0; });
+  function digitsOf(str) {
+    var s = String(str);
+    // map unicode superscript → digit dulu agar 4² → 42
+    s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, function (c) {
+      return ({ '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9' })[c] || '';
     });
+    return s.replace(/\D/g, '');
+  }
+  function onlyFromCore(nums, core) {
+    if (!nums || !nums.length || !core) return false;
+    return nums.every(function (n) {
+      var ns = String(n);
+      if (ns === core || core.indexOf(ns) >= 0) return true;
+      for (var i = 0; i < ns.length; i++) {
+        if (core.indexOf(ns.charAt(i)) < 0) return false;
+      }
+      return ns.length > 0;
+    });
+  }
+  function splitNumTokens(rest) {
+    return String(rest).replace(/[,;|]+/g, ' ').trim().split(/\s+/).filter(function (x) {
+      return x && /^\d+$/.test(x);
+    });
+  }
+  function stripTrailingNums(head, rest) {
+    var core = '';
+    var m, re1 = /\d+\s*√\s*\d+|\d*\\sqrt\{\d+\}|\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+|\d+\^\{\d+\}|\(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+\)[⁰¹²³⁴⁵⁶⁷⁸⁹]*|\(\d+\^\{\d+\}\)\^\{\d+\}|√\s*\d+/g;
+    while ((m = re1.exec(head)) !== null) core += digitsOf(m[0]);
+    if (!core) return null;
+    var nums = splitNumTokens(rest);
+    if (onlyFromCore(nums, core)) return head.replace(/\s+$/, '');
+    return null;
   }
 
   try {
-    for (var r = 0; r < 6; r++) {
+    t = t.replace(/\s*([×÷:+\-])\s*/g, ' $1 ');
+    t = t.replace(/\s{2,}/g, ' ').trim();
+
+    for (var r = 0; r < 8; r++) {
       var before = t;
 
-      // "2√3 2 3" / "2√3 2 3 2 3"
-      t = t.replace(/(\d+)\s*√\s*(\d+)((?:\s+\d+){1,12})/g, function (full, coef, rad, rest) {
-        var core = coef + rad;
-        var nums = rest.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return coef + '√' + rad;
+      // 1) PASANGAN dulu (akar/pangkat op akar/pangkat) + residual
+      t = t.replace(/(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*([×xX*·+\-÷:])\s*(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)((?:[\s,;]+\d+){1,16})/g, function (full, a, op, b, rest) {
+        var core = digitsOf(a) + digitsOf(b);
+        var nums = splitNumTokens(rest);
+        if (onlyFromCore(nums, core)) return a + ' ' + op + ' ' + b;
         return full;
       });
-      t = t.replace(/(\d*)\\sqrt\{(\d+)\}((?:\s+\d+){1,12})/g, function (full, coef, rad, rest) {
-        var c = coef || '';
-        var core = c + rad;
-        var nums = rest.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return c + '\\sqrt{' + rad + '}';
+      t = t.replace(/(\d+\^\{\d+\})\s*([×xX*·+\-÷:])\s*(\d+\^\{\d+\})((?:[\s,;]+\d+){1,16})/g, function (full, a, op, b, rest) {
+        var core = digitsOf(a) + digitsOf(b);
+        if (onlyFromCore(splitNumTokens(rest), core)) return a + ' ' + op + ' ' + b;
         return full;
       });
-      // "√18 18"
-      t = t.replace(/√\s*\(?\s*(\d+)\s*\)?(?:\s+\1)+/g, '√$1');
-      t = t.replace(/\\sqrt\{(\d+)\}(?:\s+\1)+/g, '\\sqrt{$1}');
-      // leading "2 3 2√3"
-      t = t.replace(/((?:\d+\s+){1,8})(\d+)\s*√\s*(\d+)/g, function (full, lead, coef, rad) {
-        var core = coef + rad;
-        var nums = lead.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return coef + '√' + rad;
+      t = t.replace(/(\d+\s*√\s*\d+)\s*([×xX*·+\-÷:])\s*(\d+\s*√\s*\d+)((?:[\s,;]+\d+){1,16})/g, function (full, a, op, b, rest) {
+        var core = digitsOf(a) + digitsOf(b);
+        if (onlyFromCore(splitNumTokens(rest), core)) return a + ' ' + op + ' ' + b;
         return full;
       });
-      // "18√18" → "√18"
-      t = t.replace(/\b(\d+)\s*√\s*\1\b/g, '√$1');
-      t = t.replace(/\b(\d+)\\sqrt\{\1\}/g, '\\sqrt{$1}');
-
-      // "2⁵ 2 5"
-      t = t.replace(/(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)((?:\s+\d+){1,12})/g, function (full, base, sup, rest) {
-        var exp = '';
-        for (var i = 0; i < sup.length; i++) exp += (supMap[sup[i]] || '');
-        var core = base + exp;
-        var nums = rest.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return base + sup;
-        return full;
-      });
-      t = t.replace(/(\d+)\^\{(\d+)\}((?:\s+\d+){1,12})/g, function (full, base, exp, rest) {
-        var core = base + exp;
-        var nums = rest.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return base + '^{' + exp + '}';
-        return full;
-      });
-      // leading before power
-      t = t.replace(/((?:\d+\s+){1,8})(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, function (full, lead, base, sup) {
-        var exp = '';
-        for (var i = 0; i < sup.length; i++) exp += (supMap[sup[i]] || '');
-        var core = base + exp;
-        var nums = lead.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return base + sup;
+      t = t.replace(/(\d*\\sqrt\{\d+\})\s*([×xX*·+\-÷:])\s*(\d*\\sqrt\{\d+\})((?:[\s,;]+\d+){1,16})/g, function (full, a, op, b, rest) {
+        var core = digitsOf(a) + digitsOf(b);
+        if (onlyFromCore(splitNumTokens(rest), core)) return a + ' ' + op + ' ' + b;
         return full;
       });
 
-      // nested "(5²)2" → "(5²)²"
+      // 2) Nested power + residual
       t = t.replace(/\((\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)\)\s*(\d)\b(?:\s+\(\1\)\s*\2)*/g, function (_, inner, exp) {
         return '(' + inner + ')' + toSup(exp);
+      });
+      t = t.replace(/(\(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+\)[⁰¹²³⁴⁵⁶⁷⁸⁹]+)((?:[\s,;]+\d+){1,12})/g, function (full, tok, rest) {
+        if (onlyFromCore(splitNumTokens(rest), digitsOf(tok))) return tok;
+        return full;
+      });
+      t = t.replace(/(\(\d+\^\{\d+\}\)\^\{\d+\})((?:[\s,;]+\d+){1,12})/g, function (full, tok, rest) {
+        if (onlyFromCore(splitNumTokens(rest), digitsOf(tok))) return tok;
+        return full;
       });
       t = t.replace(/(\(\s*\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+\s*\)[⁰¹²³⁴⁵⁶⁷⁸⁹]+)(?:\s+\(\s*\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+\s*\)\s*\d*)+/g, '$1');
       t = t.replace(/(\(\s*\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+\s*\)[⁰¹²³⁴⁵⁶⁷⁸⁹]+)(?:\s+\1)+/g, '$1');
 
-      // "√25 + √16 25 + 16"
-      t = t.replace(/(√\s*\d+(?:\s*[+\-]\s*√\s*\d+)+)(?:\s+\d+(?:\s*[+\-]\s*\d+)+)+/g, '$1');
-      t = t.replace(/(\\sqrt\{\d+\}(?:\s*[+\-]\s*\\sqrt\{\d+\})+)(?:\s+\d+(?:\s*[+\-]\s*\d+)+)+/g, '$1');
+      // 3) √a + √b residual
+      t = t.replace(/(√\s*\d+(?:\s*[+\-]\s*√\s*\d+)+)(?:[\s,;]+\d+(?:\s*[+\-]\s*\d+)*)+/g, '$1');
+      t = t.replace(/(\\sqrt\{\d+\}(?:\s*[+\-]\s*\\sqrt\{\d+\})+)(?:[\s,;]+\d+(?:\s*[+\-]\s*\d+)*)+/g, '$1');
 
-      // "4² × 4³ 4 2 4 3"
-      t = t.replace(/(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s*([×xX*·+\-÷:])\s*(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)((?:\s+\d+){1,10})/g, function (full, a, op, b, rest) {
-        var sa = a.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, '');
-        var sb = b.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, '');
-        var ea = '', eb = '';
-        for (var i = 0; i < a.length; i++) if (supMap[a[i]]) ea += supMap[a[i]];
-        for (var j = 0; j < b.length; j++) if (supMap[b[j]]) eb += supMap[b[j]];
-        var core = sa + ea + sb + eb;
-        var nums = rest.trim().split(/\s+/).filter(Boolean);
-        if (onlyCoreDigits(nums, core)) return a + ' ' + op + ' ' + b;
+      // 4) Single akar trailing (baru setelah pasangan)
+      t = t.replace(/(\d+)\s*√\s*(\d+)((?:[\s,;]+\d+){1,16})/g, function (full, coef, rad, rest) {
+        var core = coef + rad;
+        if (onlyFromCore(splitNumTokens(rest), core)) return coef + '√' + rad;
+        return full;
+      });
+      t = t.replace(/(\d*)\\sqrt\{(\d+)\}((?:[\s,;]+\d+){1,16})/g, function (full, coef, rad, rest) {
+        var c = coef || '';
+        if (onlyFromCore(splitNumTokens(rest), c + rad)) return c + '\\sqrt{' + rad + '}';
+        return full;
+      });
+      t = t.replace(/√\s*\(?\s*(\d+)\s*\)?(?:[\s,;]+\1)+/g, '√$1');
+      t = t.replace(/\\sqrt\{(\d+)\}(?:[\s,;]+\1)+/g, '\\sqrt{$1}');
+      t = t.replace(/\b(\d+)\s*√\s*\1\b/g, '√$1');
+      t = t.replace(/\b(\d+)\\sqrt\{\1\}/g, '\\sqrt{$1}');
+
+      // 5) Single pangkat trailing
+      t = t.replace(/(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)((?:[\s,;]+\d+){1,16})/g, function (full, base, sup, rest) {
+        var exp = '';
+        for (var i = 0; i < sup.length; i++) exp += (supMap[sup.charAt(i)] || '');
+        if (onlyFromCore(splitNumTokens(rest), base + exp)) return base + sup;
+        return full;
+      });
+      t = t.replace(/(\d+)\^\{(\d+)\}((?:[\s,;]+\d+){1,16})/g, function (full, base, exp, rest) {
+        if (onlyFromCore(splitNumTokens(rest), base + exp)) return base + '^{' + exp + '}';
         return full;
       });
 
-      // duplicate tokens
+      // 6) Leading residual
+      t = t.replace(/((?:\d+[\s,;]+){1,10})(\d+)\s*√\s*(\d+)/g, function (full, lead, coef, rad) {
+        if (onlyFromCore(splitNumTokens(lead), coef + rad)) return coef + '√' + rad;
+        return full;
+      });
+      t = t.replace(/((?:\d+[\s,;]+){1,10})(\d*)\\sqrt\{(\d+)\}/g, function (full, lead, coef, rad) {
+        var c = coef || '';
+        if (onlyFromCore(splitNumTokens(lead), c + rad)) return c + '\\sqrt{' + rad + '}';
+        return full;
+      });
+      t = t.replace(/((?:\d+[\s,;]+){1,10})(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, function (full, lead, base, sup) {
+        var exp = '';
+        for (var i = 0; i < sup.length; i++) exp += (supMap[sup.charAt(i)] || '');
+        if (onlyFromCore(splitNumTokens(lead), base + exp)) return base + sup;
+        return full;
+      });
+      t = t.replace(/((?:\d+[\s,;]+){1,10})(\d+)\^\{(\d+)\}/g, function (full, lead, base, exp) {
+        if (onlyFromCore(splitNumTokens(lead), base + exp)) return base + '^{' + exp + '}';
+        return full;
+      });
+
+      // residual di antara op
+      t = t.replace(/(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)\s+\1\s+(\d)\s*([×xX*·+\-÷:])\s*(\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, function (_, b1, s1, dig, op, b2, s2) {
+        var exp1 = '';
+        for (var i = 0; i < s1.length; i++) exp1 += (supMap[s1.charAt(i)] || '');
+        if (dig === exp1 || dig === b1) return b1 + s1 + ' ' + op + ' ' + b2 + s2;
+        return b1 + s1 + ' ' + b1 + ' ' + dig + ' ' + op + ' ' + b2 + s2;
+      });
+
+      // duplikat
       t = t.replace(/(\d+\s*√\s*\d+)(?:\s+\1)+/g, '$1');
       t = t.replace(/(\d*\\sqrt\{\d+\})(?:\s+\1)+/g, '$1');
       t = t.replace(/(\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+(?:\s*[×xX*·+\-÷:]\s*\d+[⁰¹²³⁴⁵⁶⁷⁸⁹]+)*)(?:\s+\1)+/g, '$1');
+      t = t.replace(/(\d+\^\{\d+\}(?:\s*[×xX*·+\-÷:]\s*\d+\^\{\d+\})*)(?:\s+\1)+/g, '$1');
+
+      // 7) Agresif: ekor sebelum "adalah"/akhir — pakai SEMUA digit math di head
+      t = t.replace(/^(.*?)((?:[\s,;]+\d+){1,16})(\s+(?:adalah\b|\.{2,}|…).*)$/i, function (full, head, rest, tail) {
+        var stripped = stripTrailingNums(head, rest);
+        return stripped != null ? stripped + tail : full;
+      });
+      t = t.replace(/^(.*?)((?:[\s,;]+\d+){1,16})\s*$/, function (full, head, rest) {
+        if (!/[√⁰¹²³⁴⁵⁶⁷⁸⁹\\]|\^\{\d+\}/.test(head)) return full;
+        var stripped = stripTrailingNums(head, rest);
+        return stripped != null ? stripped : full;
+      });
 
       if (t === before) break;
     }
